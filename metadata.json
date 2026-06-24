@@ -1,0 +1,6 @@
+{
+  "name": "MX JustLearn",
+  "description": "AI Powered Learning Management System by MX Infotech. Combines elite course content, live classes, customized roadmaps, assessments, a LeetCode-style coding arena, a professional resume builder, and an interactive AI Mentor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
