@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import html2pdf from 'html2pdf.js';
 import { 
   FileText, Download, RefreshCw, Bot, Plus, Trash2, Save, 
   Briefcase, Award, BookOpen, User, Mail, Phone, MapPin, 
@@ -98,28 +99,111 @@ export default function ResumeBuilder({
     setIsDownloadingPdf(true);
     setDownloadError(null);
     setDownloadSuccess(false);
-    try {
-      if (!(window as any).html2pdf) {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-          script.integrity = 'sha512-GsLlZN/3F2ErC5xWfZUsfO3CnhyWD16gAD1o535dgmDA9iJnYv4YVEC5YyUJQ3bPcNYmcgXUpMwAP8M24E4sxg==';
-          script.crossOrigin = 'anonymous';
-          script.onload = () => resolve();
-          script.onerror = (e) => reject(new Error('Failed to load PDF engine. Please verify your connection.'));
-          document.head.appendChild(script);
-        });
-      }
 
+    const disabledSheets: CSSStyleSheet[] = [];
+    const inlineStyleBackups = new Map<HTMLElement, string>();
+    let tempStyle: HTMLStyleElement | null = null;
+
+    try {
       const element = document.getElementById('resume-pdf-render-target');
       if (!element) {
         throw new Error('Resume template target not found for PDF generation.');
       }
 
+      // Create a single canvas for high performance color parsing
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d');
+
+      // Cache resolved colors to avoid duplicate calculations
+      const oklchCache = new Map<string, string>();
+      const resolveOklchToRgb = (colorStr: string): string => {
+        if (oklchCache.has(colorStr)) {
+          return oklchCache.get(colorStr)!;
+        }
+        try {
+          if (ctx) {
+            ctx.clearRect(0, 0, 1, 1);
+            ctx.fillStyle = colorStr;
+            ctx.fillRect(0, 0, 1, 1);
+            const data = ctx.getImageData(0, 0, 1, 1).data;
+            const rgb = `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${(data[3] / 255).toFixed(3)})`;
+            oklchCache.set(colorStr, rgb);
+            return rgb;
+          }
+        } catch (e) {
+          console.warn('Canvas color resolution failed:', colorStr, e);
+        }
+        return colorStr;
+      };
+
+      // 1. Resolve oklch colors in all active stylesheets (handling inline style tags, links, and CSSOM injected rules)
+      let combinedCss = '';
+      for (let i = 0; i < document.styleSheets.length; i++) {
+        const sheet = document.styleSheets[i];
+        try {
+          if (sheet.cssRules) {
+            let sheetCss = '';
+            for (let j = 0; j < sheet.cssRules.length; j++) {
+              sheetCss += sheet.cssRules[j].cssText + '\n';
+            }
+            combinedCss += sheetCss + '\n';
+            
+            // Disable original stylesheet temporarily so it doesn't conflict
+            sheet.disabled = true;
+            disabledSheets.push(sheet);
+          } else {
+            // If cssRules is not readable but we have an href, verify if it is Google Fonts
+            const href = sheet.href || '';
+            if (!href.includes('fonts.googleapis.com') && !href.includes('fonts.gstatic.com')) {
+              sheet.disabled = true;
+              disabledSheets.push(sheet);
+            }
+          }
+        } catch (e) {
+          // If cross-origin / CORS blocks reading, disable it if it's not Google Fonts
+          const href = sheet.href || '';
+          if (!href.includes('fonts.googleapis.com') && !href.includes('fonts.gstatic.com')) {
+            sheet.disabled = true;
+            disabledSheets.push(sheet);
+          }
+        }
+      }
+
+      // Convert oklch/oklab in the combined css styles
+      const oklchRegex = /okl(?:ch|ab)\((?:[^()]+|\([^()]*\))*\)/g;
+      const sanitizedCss = combinedCss.replace(oklchRegex, (match) => {
+        return resolveOklchToRgb(match);
+      });
+
+      // Inject the sanitized styles temporarily
+      tempStyle = document.createElement('style');
+      tempStyle.id = 'temp-pdf-styles';
+      tempStyle.textContent = sanitizedCss;
+      document.head.appendChild(tempStyle);
+
+      // 2. Resolve oklch/oklab colors in inline style attributes of the target element and its children
+      const elementsWithStyles = element.querySelectorAll('[style]');
+      const allTargetElements = [element, ...Array.from(elementsWithStyles)];
+      
+      allTargetElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          const originalStyle = el.getAttribute('style');
+          if (originalStyle && (originalStyle.includes('oklch') || originalStyle.includes('oklab'))) {
+            inlineStyleBackups.set(el, originalStyle);
+            const replacedStyle = originalStyle.replace(oklchRegex, (match) => {
+              return resolveOklchToRgb(match);
+            });
+            el.setAttribute('style', replacedStyle);
+          }
+        }
+      });
+
       const opt = {
-        margin:       [0.2, 0.2, 0.2, 0.2],
+        margin:       [0.2, 0.2, 0.2, 0.2] as [number, number, number, number],
         filename:     `${resumeName.toLowerCase().replace(/\s+/g, '_')}_resume.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
+        image:        { type: 'jpeg' as const, quality: 0.98 },
         html2canvas:  { 
           scale: 2, 
           useCORS: true,
@@ -127,15 +211,31 @@ export default function ResumeBuilder({
           allowTaint: true,
           backgroundColor: activeTemplate === 'tech_mono' ? '#020617' : (activeTemplate === 'creative_indigo' ? '#ffffff' : (activeTemplate === 'executive' ? '#f8fafc' : '#ffffff'))
         },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' as const }
       };
 
-      await (window as any).html2pdf().set(opt).from(element).save();
+      // Use the bundled html2pdf package directly
+      await html2pdf().set(opt).from(element).save();
       setDownloadSuccess(true);
     } catch (err: any) {
       console.error('Error downloading PDF:', err);
       setDownloadError(err.message || 'An error occurred during PDF generation.');
     } finally {
+      // 1. Restore original style sheets
+      disabledSheets.forEach((sheet) => {
+        sheet.disabled = false;
+      });
+
+      // 2. Remove the temporary sanitized style tag
+      if (tempStyle) {
+        tempStyle.remove();
+      }
+
+      // 3. Restore original inline styles
+      inlineStyleBackups.forEach((originalStyle, el) => {
+        el.setAttribute('style', originalStyle);
+      });
+
       setIsDownloadingPdf(false);
     }
   };
