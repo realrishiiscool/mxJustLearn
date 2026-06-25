@@ -7,16 +7,21 @@ import React, { useState, useEffect } from 'react';
 import { 
   Flame, Award, Trophy, Sparkles, Compass, Briefcase, FileText, 
   Video, Calendar, MessageSquare, Plus, Check, Clock, ChevronRight,
-  TrendingUp, Star, Send, Bot, AlertCircle, FileCheck, CheckCircle2, RefreshCw, X
+  TrendingUp, Star, Send, Bot, AlertCircle, FileCheck, CheckCircle2, RefreshCw, X, Map, BookOpen, Shield
 } from 'lucide-react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import { Course, UserProfile, Job, CommunityPost } from '../types';
 import { COURSES, CAREER_PATHS, JOB_LISTINGS, COMMUNITY_POSTS, STUDENT_PROJECTS } from '../data';
+import ResumeBuilder from './ResumeBuilder';
+import LearningRoadmap from './LearningRoadmap';
+import StudentLeaderboard from './StudentLeaderboard';
+import StudentBadges from './StudentBadges';
 
 interface StudentDashboardProps {
   profile: UserProfile;
   setProfile: (profile: UserProfile) => void;
   enrolledCourses: string[];
+  onEnrollCourse: (courseId: string) => void;
   onLaunchPlayer: (course: Course) => void;
   onLaunchAssessment: (courseId: string) => void;
   setActiveTab: (tab: string) => void;
@@ -26,12 +31,13 @@ export default function StudentDashboard({
   profile,
   setProfile,
   enrolledCourses,
+  onEnrollCourse,
   onLaunchPlayer,
   onLaunchAssessment,
   setActiveTab
 }: StudentDashboardProps) {
   // Navigation inside student dashboard
-  const [studentSubTab, setStudentSubTab] = useState<'overview' | 'career_paths' | 'internships' | 'resume' | 'interviews' | 'jobs' | 'community'>('overview');
+  const [studentSubTab, setStudentSubTab] = useState<'overview' | 'roadmap' | 'leaderboard' | 'badges' | 'career_paths' | 'internships' | 'resume' | 'interviews' | 'jobs' | 'community'>('overview');
   
   // Dynamic State variables
   const [dailyReports, setDailyReports] = useState<any[]>([]);
@@ -374,21 +380,28 @@ export default function StudentDashboard({
   };
 
   // Run AI Resume Critique
-  const handleResumeCritique = async () => {
+  const handleResumeCritique = async (customData?: {
+    qualification: string;
+    college: string;
+    careerGoal: string;
+    skills: string[];
+    experienceLevel: string;
+  }) => {
     setLoadingResumeCritique(true);
     setAiResumeFeedback('');
     try {
+      const payload = {
+        name: profile.name,
+        email: profile.email,
+        qualification: customData ? customData.qualification : resumeQual,
+        skills: customData ? customData.skills : resumeSkills.split(',').map(s => s.trim()),
+        careerGoal: customData ? customData.careerGoal : resumeGoal,
+        experienceLevel: customData ? customData.experienceLevel : profile.experienceLevel
+      };
       const res = await fetch('/api/ai/resume-critique', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: profile.name,
-          email: profile.email,
-          qualification: resumeQual,
-          skills: resumeSkills.split(',').map(s => s.trim()),
-          careerGoal: resumeGoal,
-          experienceLevel: profile.experienceLevel
-        })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data.success) {
@@ -550,6 +563,9 @@ export default function StudentDashboard({
       <div id="student-workspace-subnav" className="flex items-center gap-2 border-b border-slate-800/80 mb-8 overflow-x-auto pb-1 text-xs">
         {[
           { id: 'overview', label: 'Overview Dashboard', icon: Compass },
+          { id: 'roadmap', label: 'Learning Roadmap', icon: Map },
+          { id: 'leaderboard', label: 'Student Leaderboard', icon: Trophy },
+          { id: 'badges', label: 'Badges & Achievements', icon: Sparkles },
           { id: 'career_paths', label: 'Career Roadmaps', icon: Award },
           { id: 'internships', label: 'MR Tech Internships', icon: FileText },
           { id: 'resume', label: 'Resume Builder', icon: FileText },
@@ -697,8 +713,103 @@ export default function StudentDashboard({
                 </div>
               </div>
             </div>
+
+            {/* Quick Achievements Summary Widget */}
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+              <div className="flex items-center justify-between mb-3.5">
+                <h3 className="font-bold text-base text-white">My Unlocked Badges</h3>
+                <button 
+                  onClick={() => setStudentSubTab('badges')}
+                  className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5 cursor-pointer"
+                >
+                  View All <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Badges list */}
+              <div className="grid grid-cols-4 gap-3">
+                {/* Badge 1: First Contact (Enrolled >= 1) */}
+                <div className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center transition ${
+                  enrolledCourses.length >= 1 
+                    ? 'bg-amber-950/15 border-amber-800/40 text-amber-400' 
+                    : 'bg-slate-950/40 border-slate-850 text-slate-650'
+                }`} title="First Contact Badge: Enrolled in a course">
+                  <BookOpen className="w-5 h-5 mb-1 animate-pulse" />
+                  <span className="text-[8px] font-mono font-bold truncate max-w-full">Pioneer</span>
+                </div>
+
+                {/* Badge 2: Streak 3+ */}
+                <div className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center transition ${
+                  profile.streak >= 3 
+                    ? 'bg-amber-950/15 border-amber-800/40 text-orange-400' 
+                    : 'bg-slate-950/40 border-slate-850 text-slate-650'
+                }`} title="Habit Builder Badge: Streak >= 3 days">
+                  <Flame className="w-5 h-5 mb-1" />
+                  <span className="text-[8px] font-mono font-bold truncate max-w-full">Habit</span>
+                </div>
+
+                {/* Badge 3: XP 1000+ */}
+                <div className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center transition ${
+                  profile.xpPoints >= 1000 
+                    ? 'bg-slate-800/30 border-slate-700 text-slate-200' 
+                    : 'bg-slate-950/40 border-slate-850 text-slate-650'
+                }`} title="Elite Scholar Badge: XP >= 1,000">
+                  <Star className="w-5 h-5 mb-1" />
+                  <span className="text-[8px] font-mono font-bold truncate max-w-full">Scholar</span>
+                </div>
+
+                {/* Badge 4: Streak 10+ */}
+                <div className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center transition ${
+                  profile.streak >= 10 
+                    ? 'bg-yellow-950/10 border-yellow-800/40 text-yellow-400' 
+                    : 'bg-slate-950/40 border-slate-850 text-slate-650'
+                }`} title="Unstoppable Momentum Badge: Streak >= 10 days">
+                  <Shield className="w-5 h-5 mb-1" />
+                  <span className="text-[8px] font-mono font-bold truncate max-w-full">Momentum</span>
+                </div>
+              </div>
+
+              {/* Small message info */}
+              <p className="text-[10px] text-slate-400 mt-3 text-center leading-normal">
+                You have unlocked <strong>{
+                  (enrolledCourses.length >= 1 ? 1 : 0) + 
+                  (profile.streak >= 3 ? 1 : 0) + 
+                  (profile.xpPoints >= 1000 ? 1 : 0) + 
+                  (profile.streak >= 10 ? 1 : 0)
+                } of 4</strong> foundational placement track achievements.
+              </p>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* LEARNING ROADMAP TIMELINE & RECOMMENDATIONS */}
+      {studentSubTab === 'roadmap' && (
+        <LearningRoadmap
+          profile={profile}
+          setProfile={setProfile}
+          enrolledCourses={enrolledCourses}
+          onEnrollCourse={onEnrollCourse}
+          onLaunchPlayer={onLaunchPlayer}
+          onLaunchAssessment={onLaunchAssessment}
+        />
+      )}
+
+      {/* COMPETITIVE COHORT LEADERBOARD */}
+      {studentSubTab === 'leaderboard' && (
+        <StudentLeaderboard
+          profile={profile}
+          setProfile={setProfile}
+        />
+      )}
+
+      {/* GAMIFIED BADGES & ACHIEVEMENTS */}
+      {studentSubTab === 'badges' && (
+        <StudentBadges
+          profile={profile}
+          setProfile={setProfile}
+          enrolledCourses={enrolledCourses}
+        />
       )}
 
       {/* 2. CAREER LEARNING PATH ROADMAPS */}
@@ -821,147 +932,14 @@ export default function StudentDashboard({
 
       {/* 4. INTERACTIVE RESUME BUILDER */}
       {studentSubTab === 'resume' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Form controls */}
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-white">MX Profile Resume Builder</h2>
-              <p className="text-slate-400 text-xs mt-1">Draft responsive developer resumes, and get a professional Gemini review.</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 font-semibold">Name</label>
-                <input
-                  type="text"
-                  value={profile.name}
-                  disabled
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 font-semibold">Email</label>
-                <input
-                  type="text"
-                  value={profile.email}
-                  disabled
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-500 cursor-not-allowed"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 font-semibold">Degree / Qualification</label>
-                <input
-                  type="text"
-                  value={resumeQual}
-                  onChange={(e) => setResumeQual(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 font-semibold">College / University</label>
-                <input
-                  type="text"
-                  value={resumeCollege}
-                  onChange={(e) => setResumeCollege(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs text-slate-400 mb-1 font-semibold">Core Goal</label>
-              <input
-                type="text"
-                value={resumeGoal}
-                onChange={(e) => setResumeGoal(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-slate-400 mb-1 font-semibold">Key Tech Skills (Comma Separated)</label>
-              <input
-                type="text"
-                value={resumeSkills}
-                onChange={(e) => setResumeSkills(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                id="resume-critique-btn"
-                onClick={handleResumeCritique}
-                disabled={loadingResumeCritique}
-                className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/10 cursor-pointer flex items-center justify-center gap-1"
-              >
-                {loadingResumeCritique ? <RefreshCw className="w-4.5 h-4.5 animate-spin" /> : <Bot className="w-4.5 h-4.5" />}
-                Get Recruiter AI Critique
-              </button>
-            </div>
-          </div>
-
-          {/* Right Preview Column */}
-          <div className="space-y-6">
-            {/* Live Resume Sheet preview */}
-            <div className="bg-white text-slate-900 p-8 rounded-3xl min-h-[480px] shadow-2xl relative border border-slate-200">
-              <div className="border-b-2 border-slate-900 pb-4">
-                <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">{profile.name}</h3>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] font-mono text-slate-650">
-                  <span>{profile.email}</span>
-                  <span>·</span>
-                  <span>{profile.phone}</span>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-5 text-[11px] leading-relaxed">
-                <div>
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Professional Objective</h4>
-                  <p className="text-slate-700">{resumeGoal}. Motivated software engineer student looking to write secure code within enterprise development sprints.</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Education</h4>
-                  <div className="flex justify-between font-bold">
-                    <span>{resumeCollege}</span>
-                    <span>2022 - 2026</span>
-                  </div>
-                  <p className="text-slate-700">{resumeQual}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Core Expertise</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {resumeSkills.split(',').map((s, idx) => (
-                      <span key={idx} className="bg-slate-100 text-slate-800 border border-slate-200 px-2 py-0.5 rounded font-medium">{s.trim()}</span>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Completed LMS Achievements</h4>
-                  <p className="text-slate-700">Participated inside MX JustLearn Java Masterclass. Earned 340 platform XP points with verified scoring track records.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* AI Advisor Response display */}
-            {aiResumeFeedback && (
-              <div className="bg-slate-900 border border-slate-850 rounded-2xl p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Bot className="w-5 h-5 text-indigo-400" />
-                  <h4 className="font-bold text-sm text-slate-200">Executive AI Critique Response</h4>
-                </div>
-                <div className="text-xs text-slate-350 leading-relaxed space-y-2 whitespace-pre-wrap">
-                  {aiResumeFeedback}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <ResumeBuilder
+          profile={profile}
+          setProfile={setProfile}
+          aiResumeFeedback={aiResumeFeedback}
+          setAiResumeFeedback={setAiResumeFeedback}
+          handleResumeCritique={handleResumeCritique}
+          loadingResumeCritique={loadingResumeCritique}
+        />
       )}
 
       {/* 5. AI MOCK INTERVIEW PLATFORM */}

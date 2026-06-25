@@ -147,6 +147,7 @@ export default function App() {
                         profile={profile}
                         setProfile={setProfile}
                         enrolledCourses={enrolledCourses}
+                        onEnrollCourse={handleEnrollCourse}
                         onLaunchPlayer={(course) => setActivePlayCourse(course)}
                         onLaunchAssessment={(cId) => setActiveAssessmentCourseId(cId)}
                         setActiveTab={setActiveTab}
