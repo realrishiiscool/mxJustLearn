@@ -48,6 +48,167 @@ export default function PublicPages({
     return 0; // Default popular sort
   });
 
+  // --- RENDERING DETAILED COURSE PREVIEW ---
+  if (selectedCourse) {
+    const isEnrolled = enrolledCourses.includes(selectedCourse.id);
+    return (
+      <div id="course-preview-page-container" className="p-8 max-w-5xl mx-auto text-slate-200">
+        <button
+          id="preview-back-btn"
+          onClick={() => onSelectCourse(null)}
+          className="mb-6 text-xs text-slate-400 hover:text-slate-200 font-medium flex items-center gap-1.5 transition"
+        >
+          ← Back to Catalog
+        </button>
+
+        {/* Master Banner Header */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 bg-slate-900 border border-slate-800 rounded-3xl p-6 lg:p-8 mb-8 shadow-xl shadow-black/15 relative overflow-hidden">
+          <div className="lg:col-span-2 flex flex-col justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-950/70 border border-slate-850 rounded-full text-[10px] font-bold text-indigo-400 uppercase tracking-widest font-mono mb-4">
+                {selectedCourse.category}
+              </div>
+              <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight mb-4">{selectedCourse.title}</h1>
+              <p className="text-slate-400 text-sm leading-relaxed mb-6">{selectedCourse.description}</p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs py-4 border-t border-slate-800/80">
+              <div>
+                <span className="text-slate-500 block uppercase font-mono text-[9px] tracking-wider">Instructor</span>
+                <span className="font-semibold text-slate-200 mt-1 block">{selectedCourse.instructor}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block uppercase font-mono text-[9px] tracking-wider">Total Duration</span>
+                <span className="font-semibold text-slate-200 mt-1 block font-mono">{selectedCourse.duration}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block uppercase font-mono text-[9px] tracking-wider">Skill Level</span>
+                <span className="font-semibold text-slate-200 mt-1 block">{selectedCourse.level}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block uppercase font-mono text-[9px] tracking-wider">Student Rating</span>
+                <span className="font-semibold text-yellow-500 mt-1 block font-mono">★ {selectedCourse.rating} / 5</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Sandbox Card */}
+          <div className="bg-slate-950 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between shadow-inner">
+            <div className="relative rounded-xl overflow-hidden aspect-video bg-slate-900 mb-4">
+              <img src={selectedCourse.thumbnailUrl} alt={selectedCourse.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <PlayCircle className="w-11 h-11 text-white opacity-90 drop-shadow-lg" />
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">PROGRAM PRICE</span>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-3xl font-black text-white">${selectedCourse.price}</span>
+                <span className="text-slate-550 text-xs font-semibold line-through">${(selectedCourse.price * 1.5).toFixed(0)}</span>
+              </div>
+              <span className="text-[10px] text-green-400 font-semibold mt-1 block">Full life-long platform access</span>
+            </div>
+
+            {isEnrolled ? (
+              <button
+                id="preview-study-btn"
+                onClick={() => {
+                  onSelectCourse(null);
+                  setActiveTab('dashboard');
+                }}
+                className="w-full py-3 bg-green-600 hover:bg-green-550 text-white font-bold rounded-xl text-xs transition duration-150 flex items-center justify-center gap-1 cursor-pointer"
+              >
+                Go to Active Learning Node
+              </button>
+            ) : (
+              <button
+                id="preview-enroll-btn"
+                onClick={() => onEnroll(selectedCourse.id)}
+                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-95 font-bold rounded-xl text-xs shadow-lg shadow-indigo-500/20 transition duration-150 cursor-pointer"
+              >
+                Enroll Now
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Content Tabs (Curriculum, Outcomes, FAQ) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Learning Outcomes */}
+            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl">
+              <h3 className="font-bold text-base text-white mb-4">Learning Objectives</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {selectedCourse.learningOutcomes.map((outcome, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-xs text-slate-300">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                    <span className="leading-relaxed">{outcome}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Curriculum Timeline */}
+            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl">
+              <h3 className="font-bold text-base text-white mb-4">Course Curriculum</h3>
+              <div className="space-y-4">
+                {selectedCourse.modules.map((mod, idx) => (
+                  <div key={idx} className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40">
+                    <div className="p-4 bg-slate-900 border-b border-slate-850 font-semibold text-xs text-slate-200">
+                      {mod.title}
+                    </div>
+                    <div className="p-2 divide-y divide-slate-900/60 text-xs">
+                      {mod.lessons.map((les, j) => (
+                        <div key={j} className="p-3 flex items-center justify-between text-slate-400">
+                          <div className="flex items-center gap-2">
+                            <PlayCircle className="w-4 h-4 text-slate-500 shrink-0" />
+                            <span className="font-medium text-slate-300 truncate">{les.title}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-mono text-[10px] text-slate-550">{les.duration}</span>
+                            {les.previewAllowed && (
+                              <span className="text-[9px] bg-indigo-950/40 text-indigo-400 border border-indigo-900/25 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wide">Preview</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Instructor Profile Card */}
+            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl text-center">
+              <div className="w-16 h-16 rounded-full bg-slate-800 mx-auto mb-3 flex items-center justify-center font-extrabold text-md text-white border-2 border-slate-700 shadow">
+                {selectedCourse.instructor.split(' ').map(n => n[0]).join('')}
+              </div>
+              <h4 className="font-bold text-sm text-slate-100">{selectedCourse.instructor}</h4>
+              <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block mt-0.5">Primary Mentor</span>
+              <p className="text-slate-450 text-xs leading-relaxed mt-3 border-t border-slate-800/80 pt-3">{selectedCourse.instructorBio}</p>
+            </div>
+
+            {/* FAQs */}
+            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl">
+              <h3 className="font-bold text-sm text-white mb-4">Course FAQ</h3>
+              <div className="space-y-4 text-xs">
+                {selectedCourse.faqs.map((faq, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <h5 className="font-bold text-slate-200">{faq.question}</h5>
+                    <p className="text-slate-450 leading-relaxed">{faq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // --- RENDERING LANDING HOME ---
   if (activeTab === 'home') {
     return (
@@ -452,166 +613,7 @@ export default function PublicPages({
     );
   }
 
-  // --- RENDERING DETAILED COURSE PREVIEW ---
-  if (selectedCourse) {
-    const isEnrolled = enrolledCourses.includes(selectedCourse.id);
-    return (
-      <div id="course-preview-page-container" className="p-8 max-w-5xl mx-auto text-slate-200">
-        <button
-          id="preview-back-btn"
-          onClick={() => onSelectCourse(null)}
-          className="mb-6 text-xs text-slate-400 hover:text-slate-200 font-medium flex items-center gap-1.5 transition"
-        >
-          ← Back to Catalog
-        </button>
 
-        {/* Master Banner Header */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 bg-slate-900 border border-slate-800 rounded-3xl p-6 lg:p-8 mb-8 shadow-xl shadow-black/15 relative overflow-hidden">
-          <div className="lg:col-span-2 flex flex-col justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-950/70 border border-slate-850 rounded-full text-[10px] font-bold text-indigo-400 uppercase tracking-widest font-mono mb-4">
-                {selectedCourse.category}
-              </div>
-              <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight mb-4">{selectedCourse.title}</h1>
-              <p className="text-slate-400 text-sm leading-relaxed mb-6">{selectedCourse.description}</p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs py-4 border-t border-slate-800/80">
-              <div>
-                <span className="text-slate-500 block uppercase font-mono text-[9px] tracking-wider">Instructor</span>
-                <span className="font-semibold text-slate-200 mt-1 block">{selectedCourse.instructor}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block uppercase font-mono text-[9px] tracking-wider">Total Duration</span>
-                <span className="font-semibold text-slate-200 mt-1 block font-mono">{selectedCourse.duration}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block uppercase font-mono text-[9px] tracking-wider">Skill Level</span>
-                <span className="font-semibold text-slate-200 mt-1 block">{selectedCourse.level}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block uppercase font-mono text-[9px] tracking-wider">Student Rating</span>
-                <span className="font-semibold text-yellow-500 mt-1 block font-mono">★ {selectedCourse.rating} / 5</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Sandbox Card */}
-          <div className="bg-slate-950 border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between shadow-inner">
-            <div className="relative rounded-xl overflow-hidden aspect-video bg-slate-900 mb-4">
-              <img src={selectedCourse.thumbnailUrl} alt={selectedCourse.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <PlayCircle className="w-11 h-11 text-white opacity-90 drop-shadow-lg" />
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">PROGRAM PRICE</span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-black text-white">${selectedCourse.price}</span>
-                <span className="text-slate-550 text-xs font-semibold line-through">${(selectedCourse.price * 1.5).toFixed(0)}</span>
-              </div>
-              <span className="text-[10px] text-green-400 font-semibold mt-1 block">Full life-long platform access</span>
-            </div>
-
-            {isEnrolled ? (
-              <button
-                id="preview-study-btn"
-                onClick={() => {
-                  onSelectCourse(null);
-                  setActiveTab('dashboard');
-                }}
-                className="w-full py-3 bg-green-600 hover:bg-green-550 text-white font-bold rounded-xl text-xs transition duration-150 flex items-center justify-center gap-1 cursor-pointer"
-              >
-                Go to Active Learning Node
-              </button>
-            ) : (
-              <button
-                id="preview-enroll-btn"
-                onClick={() => onEnroll(selectedCourse.id)}
-                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-95 font-bold rounded-xl text-xs shadow-lg shadow-indigo-500/20 transition duration-150 cursor-pointer"
-              >
-                Enroll Now
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Content Tabs (Curriculum, Outcomes, FAQ) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            {/* Learning Outcomes */}
-            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl">
-              <h3 className="font-bold text-base text-white mb-4">Learning Objectives</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {selectedCourse.learningOutcomes.map((outcome, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs text-slate-300">
-                    <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
-                    <span className="leading-relaxed">{outcome}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Curriculum Timeline */}
-            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl">
-              <h3 className="font-bold text-base text-white mb-4">Course Curriculum</h3>
-              <div className="space-y-4">
-                {selectedCourse.modules.map((mod, idx) => (
-                  <div key={idx} className="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40">
-                    <div className="p-4 bg-slate-900 border-b border-slate-850 font-semibold text-xs text-slate-200">
-                      {mod.title}
-                    </div>
-                    <div className="p-2 divide-y divide-slate-900/60 text-xs">
-                      {mod.lessons.map((les, j) => (
-                        <div key={j} className="p-3 flex items-center justify-between text-slate-400">
-                          <div className="flex items-center gap-2">
-                            <PlayCircle className="w-4 h-4 text-slate-500 shrink-0" />
-                            <span className="font-medium text-slate-300 truncate">{les.title}</span>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="font-mono text-[10px] text-slate-550">{les.duration}</span>
-                            {les.previewAllowed && (
-                              <span className="text-[9px] bg-indigo-950/40 text-indigo-400 border border-indigo-900/25 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wide">Preview</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            {/* Instructor Profile Card */}
-            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl text-center">
-              <div className="w-16 h-16 rounded-full bg-slate-800 mx-auto mb-3 flex items-center justify-center font-extrabold text-md text-white border-2 border-slate-700 shadow">
-                {selectedCourse.instructor.split(' ').map(n => n[0]).join('')}
-              </div>
-              <h4 className="font-bold text-sm text-slate-100">{selectedCourse.instructor}</h4>
-              <span className="text-[10px] font-mono text-indigo-400 uppercase tracking-wider block mt-0.5">Primary Mentor</span>
-              <p className="text-slate-450 text-xs leading-relaxed mt-3 border-t border-slate-800/80 pt-3">{selectedCourse.instructorBio}</p>
-            </div>
-
-            {/* FAQs */}
-            <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl">
-              <h3 className="font-bold text-sm text-white mb-4">Course FAQ</h3>
-              <div className="space-y-4 text-xs">
-                {selectedCourse.faqs.map((faq, i) => (
-                  <div key={i} className="space-y-1.5">
-                    <h5 className="font-bold text-slate-200">{faq.question}</h5>
-                    <p className="text-slate-450 leading-relaxed">{faq.answer}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return null;
 }

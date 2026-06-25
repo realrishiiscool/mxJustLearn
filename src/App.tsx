@@ -142,7 +142,7 @@ export default function App() {
                         enrolledCourses={enrolledCourses}
                       />
                     )}
-                    {activeTab === 'dashboard' && (
+                    {(activeTab === 'dashboard' || activeTab === 'resume_builder' || activeTab === 'career_paths' || activeTab === 'internship_portal' || activeTab === 'community') && (
                       <StudentDashboard
                         profile={profile}
                         setProfile={setProfile}
@@ -151,6 +151,7 @@ export default function App() {
                         onLaunchPlayer={(course) => setActivePlayCourse(course)}
                         onLaunchAssessment={(cId) => setActiveAssessmentCourseId(cId)}
                         setActiveTab={setActiveTab}
+                        activeTab={activeTab}
                       />
                     )}
                     {activeTab === 'coding' && (

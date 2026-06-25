@@ -25,6 +25,7 @@ interface StudentDashboardProps {
   onLaunchPlayer: (course: Course) => void;
   onLaunchAssessment: (courseId: string) => void;
   setActiveTab: (tab: string) => void;
+  activeTab?: string;
 }
 
 export default function StudentDashboard({
@@ -34,10 +35,45 @@ export default function StudentDashboard({
   onEnrollCourse,
   onLaunchPlayer,
   onLaunchAssessment,
-  setActiveTab
+  setActiveTab,
+  activeTab
 }: StudentDashboardProps) {
   // Navigation inside student dashboard
   const [studentSubTab, setStudentSubTab] = useState<'overview' | 'roadmap' | 'leaderboard' | 'badges' | 'career_paths' | 'internships' | 'resume' | 'interviews' | 'jobs' | 'community'>('overview');
+
+  // Synchronize internal state when prop activeTab changes
+  useEffect(() => {
+    if (activeTab) {
+      if (activeTab === 'resume_builder') {
+        setStudentSubTab('resume');
+      } else if (activeTab === 'career_paths') {
+        setStudentSubTab('career_paths');
+      } else if (activeTab === 'internship_portal') {
+        setStudentSubTab('internships');
+      } else if (activeTab === 'community') {
+        setStudentSubTab('community');
+      } else if (activeTab === 'dashboard') {
+        setStudentSubTab('overview');
+      }
+    }
+  }, [activeTab]);
+
+  const handleSubTabChange = (tabId: typeof studentSubTab) => {
+    setStudentSubTab(tabId);
+    if (tabId === 'resume') {
+      setActiveTab('resume_builder');
+    } else if (tabId === 'career_paths') {
+      setActiveTab('career_paths');
+    } else if (tabId === 'internships') {
+      setActiveTab('internship_portal');
+    } else if (tabId === 'community') {
+      setActiveTab('community');
+    } else if (tabId === 'overview') {
+      setActiveTab('dashboard');
+    } else {
+      setActiveTab('dashboard');
+    }
+  };
   
   // Dynamic State variables
   const [dailyReports, setDailyReports] = useState<any[]>([]);
@@ -578,7 +614,7 @@ export default function StudentDashboard({
           return (
             <button
               key={subTab.id}
-              onClick={() => setStudentSubTab(subTab.id as any)}
+              onClick={() => handleSubTabChange(subTab.id as any)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl transition-all font-semibold shrink-0 cursor-pointer ${
                 isActive
                   ? 'bg-slate-900 border-t-2 border-t-indigo-500 text-indigo-400 font-bold border-x border-slate-800'
@@ -719,7 +755,7 @@ export default function StudentDashboard({
               <div className="flex items-center justify-between mb-3.5">
                 <h3 className="font-bold text-base text-white">My Unlocked Badges</h3>
                 <button 
-                  onClick={() => setStudentSubTab('badges')}
+                  onClick={() => handleSubTabChange('badges')}
                   className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5 cursor-pointer"
                 >
                   View All <ChevronRight className="w-3.5 h-3.5" />

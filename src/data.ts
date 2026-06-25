@@ -575,7 +575,7 @@ export const COURSES: Course[] = [
     duration: "112 Hours",
     price: 299,
     level: "Advanced",
-    thumbnailUrl: "https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=600&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=600&q=80",
     badge: "Hot",
     description: "Architect state-of-the-art Generative AI systems. Master model fine-tuning, retrieval-augmented generation (RAG), vector databases, and Gemini API SDKs.",
     learningOutcomes: [
@@ -610,7 +610,7 @@ export const COURSES: Course[] = [
     duration: "58 Hours",
     price: 129,
     level: "Beginner",
-    thumbnailUrl: "https://images.unsplash.com/photo-1516116211223-4c359a36beec?auto=format&fit=crop&w=600&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80",
     badge: "Free",
     description: "Achieve QA perfection. Master Selenium WebDriver scripting, Cucumber BDD frameworks, TestNG execution grids, API tests, and CI/CD automation.",
     learningOutcomes: [
