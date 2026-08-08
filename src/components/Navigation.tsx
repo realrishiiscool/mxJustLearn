@@ -153,29 +153,7 @@ export default function Navigation({
           </select>
         </div>
 
-        {isAuthenticated ? (
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-semibold text-slate-200 truncate">{dbUserSample(currentRole)}</span>
-              <span className="text-[9px] text-slate-500 uppercase tracking-wider font-mono">{currentRole.replace('_', ' ')}</span>
-            </div>
-            <button
-              id="logout-btn"
-              onClick={onLogout}
-              className="px-2 py-1 text-[10px] font-semibold text-red-400 bg-red-950/20 rounded-lg hover:bg-red-950/40 border border-red-900/30 transition duration-150"
-            >
-              Exit
-            </button>
-          </div>
-        ) : (
-          <button
-            id="login-trigger-btn"
-            onClick={onOpenLogin}
-            className="w-full py-2 px-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-xs font-semibold hover:opacity-95 shadow-md shadow-indigo-600/10 transition duration-150"
-          >
-            Access Sandbox Logins
-          </button>
-        )}
+
       </div>
     </aside>
   );

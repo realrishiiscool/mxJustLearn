@@ -31,6 +31,7 @@ export interface Lesson {
   title: string;
   duration: string;
   videoUrl: string;
+  isPrivateYoutube?: boolean;
   previewAllowed: boolean;
   contentMarkdown?: string;
 }

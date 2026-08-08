@@ -8,6 +8,8 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import mysql from 'mysql2/promise';
+import bcrypt from 'bcryptjs';
 
 // Initialize environment variables
 dotenv.config();
@@ -17,6 +19,48 @@ const PORT = 3000;
 
 // Body parser
 app.use(express.json());
+
+// MySQL Database connection setup
+let pool: mysql.Pool;
+
+async function initDb() {
+  try {
+    const connection = await mysql.createConnection({
+      host: 'localhost',
+      user: 'root',
+      password: '1234'
+    });
+    await connection.query('CREATE DATABASE IF NOT EXISTS mx_justlearn');
+    await connection.end();
+
+    pool = mysql.createPool({
+      host: 'localhost',
+      user: 'root',
+      password: '1234',
+      database: 'mx_justlearn',
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
+    });
+
+    const conn = await pool.getConnection();
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'student',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    conn.release();
+    console.log('MySQL Database connected and schema initialized.');
+  } catch (error) {
+    console.error('Error initializing MySQL database:', error);
+  }
+}
+initDb();
 
 // Initialize Gemini AI client lazily to avoid crashing on startup if key is missing
 let aiClient: GoogleGenAI | null = null;
@@ -106,6 +150,54 @@ const db = {
 };
 
 // --- MOCK DATABASE REST ENDPOINTS ---
+
+// Register Endpoint
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
+    if (!pool) return res.status(500).json({ success: false, error: 'Database not initialized' });
+    
+    const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    if ((existing as any[]).length > 0) {
+      return res.status(400).json({ success: false, error: 'Email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [result] = await pool.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, hashedPassword]);
+    
+    res.json({ success: true, message: 'User registered successfully', userId: (result as any).insertId });
+  } catch (error: any) {
+    console.error('Registration error:', error);
+    res.status(500).json({ success: false, error: 'Server error during registration' });
+  }
+});
+
+// Login Endpoint
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!pool) return res.status(500).json({ success: false, error: 'Database not initialized' });
+    
+    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    const user = (users as any[])[0];
+    
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    }
+
+    res.json({ success: true, message: 'Login successful', user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  } catch (error: any) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, error: 'Server error during login' });
+  }
+});
 
 // Get Profile
 app.get('/api/profile', (req, res) => {

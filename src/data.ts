@@ -448,7 +448,7 @@ export const CAREER_PATHS = [
 ];
 
 // Initial Mock Courses
-export const COURSES: Course[] = [
+export let COURSES: Course[] = [
   {
     id: "java-fs",
     title: "Java Full Stack Developer Masterclass",

@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Database, Users, TrendingUp, DollarSign, RefreshCw, Eye, BookOpen, KeyRound } from 'lucide-react';
+import { ShieldAlert, Database, Users, TrendingUp, RefreshCw, Activity, Terminal, DollarSign, Eye, BookOpen, KeyRound } from 'lucide-react';
 import { DATABASE_SCHEMA_DDL } from '../data';
+import CourseEditor from './CourseEditor';
 
 export default function AdminDashboard() {
   const [adminStats, setAdminStats] = useState<any>(null);
@@ -150,6 +151,9 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Course Editor Integrated into Admin Dashboard */}
+      <CourseEditor />
 
       {/* Course sales leaderboards */}
       <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl">

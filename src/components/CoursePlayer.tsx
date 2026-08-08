@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { 
   Play, Pause, BookOpen, Clock, Users, ArrowLeft,
-  Sparkles, RefreshCw, Send, CheckCircle2, Bookmark, FileText, MessageSquare
+  Sparkles, RefreshCw, Send, CheckCircle2, Bookmark, FileText, MessageSquare, Lock
 } from 'lucide-react';
 import { Course, Lesson } from '../types';
 
@@ -125,21 +125,35 @@ export default function CoursePlayer({ course, onClose }: CoursePlayerProps) {
         
         {/* Left Column: Video screen & AI helpers */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Simulated HTML5 Video Player */}
           <div className="bg-black border border-slate-850 rounded-3xl overflow-hidden aspect-video relative group">
-            <video
-              id="player-video-source"
-              key={activeLesson.id}
-              src={activeLesson.videoUrl}
-              controls
-              autoPlay={isPlaying}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-              className="w-full h-full object-cover"
-            />
+            {activeLesson.isPrivateYoutube ? (
+              <>
+                <iframe 
+                  key={activeLesson.id}
+                  src={activeLesson.videoUrl} 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen
+                  className="w-full h-full border-0"
+                />
+                <div className="absolute top-4 left-4 bg-red-600/90 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-lg border border-red-500/50 flex items-center gap-2">
+                  <Lock className="w-3 h-3" /> Private YouTube Link - Requires Approved Google Account
+                </div>
+              </>
+            ) : (
+              <video
+                id="player-video-source"
+                key={activeLesson.id}
+                src={activeLesson.videoUrl}
+                controls
+                autoPlay={isPlaying}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                className="w-full h-full object-cover"
+              />
+            )}
             
             {/* Play/Pause custom HUD overlays */}
-            {!isPlaying && (
+            {!isPlaying && !activeLesson.isPrivateYoutube && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
                 <Play className="w-16 h-16 text-white opacity-80" />
               </div>

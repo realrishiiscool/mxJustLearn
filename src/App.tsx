@@ -14,6 +14,7 @@ import AdminDashboard from './components/AdminDashboard';
 import CorporateAdminDashboard from './components/CorporateAdminDashboard';
 import CoursePlayer from './components/CoursePlayer';
 import AssessmentEngine from './components/AssessmentEngine';
+import AuthModal from './components/AuthModal';
 
 export default function App() {
   // Current logged role or public state
@@ -52,6 +53,9 @@ export default function App() {
   // Active top level tab selected in Navigation
   const [activeTab, setActiveTab] = useState('home');
 
+  // Auth Modal Visibility
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const handleEnrollCourse = (courseId: string) => {
     if (!enrolledCourses.includes(courseId)) {
       setEnrolledCourses([...enrolledCourses, courseId]);
@@ -76,6 +80,19 @@ export default function App() {
           profile={profile}
           setProfile={setProfile}
           onClose={() => setActiveAssessmentCourseId(null)}
+        />
+      )}
+
+      {/* 3. Auth Modal */}
+      {showAuthModal && (
+        <AuthModal 
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={(user) => {
+            setProfile(prev => ({ ...prev, ...user, id: user.id || prev.id }));
+            setCurrentRole(user.role || 'student');
+            setActiveTab(user.role === 'student' ? 'dashboard' : `${user.role}_dashboard`);
+            setShowAuthModal(false);
+          }}
         />
       )}
 
@@ -106,13 +123,44 @@ export default function App() {
               setActiveTab('home');
             }}
             onOpenLogin={() => {
-              setCurrentRole('student');
-              setActiveTab('student_dashboard');
+              setShowAuthModal(true);
             }}
           />
 
           {/* MAIN CHASSIS PANELS */}
-          <main className="flex-1 min-w-0 pb-16">
+          <main className="flex-1 min-w-0 h-screen overflow-y-auto">
+            {/* TOP HEADER */}
+            <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex justify-end items-center shadow-sm">
+              {currentRole === 'public' ? (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="py-2 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full text-sm font-semibold hover:shadow-lg hover:shadow-indigo-600/20 transition duration-300 transform hover:-translate-y-0.5"
+                >
+                  Login / Register
+                </button>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col text-right">
+                    <span className="text-sm font-semibold text-slate-100">{profile.name}</span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">{currentRole.replace('_', ' ')}</span>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold uppercase">
+                    {profile.name ? profile.name.charAt(0) : 'U'}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentRole('public');
+                      setActiveTab('home');
+                    }}
+                    className="ml-2 px-3 py-1.5 text-xs font-semibold text-red-400 bg-red-950/20 rounded-lg hover:bg-red-950/40 border border-red-900/30 transition duration-150"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </header>
+            
+            <div className="pb-16">
             
             {/* PUBLIC VIEWPORT */}
             {currentRole === 'public' && (
@@ -215,7 +263,7 @@ export default function App() {
                 )}
               </div>
             )}
-
+            </div>
           </main>
         </div>
       )}

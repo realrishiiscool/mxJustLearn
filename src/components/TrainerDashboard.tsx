@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Users, Calendar, Plus, FileText, CheckCircle2, TrendingUp, RefreshCw, BarChart2, Star, Mail } from 'lucide-react';
+import CourseEditor from './CourseEditor';
 
 export default function TrainerDashboard() {
   const [classes, setClasses] = useState<any[]>([]);
@@ -236,6 +237,9 @@ export default function TrainerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Course Editor Integrated into Trainer Dashboard */}
+      <CourseEditor />
 
       {/* Students Performance Grid log */}
       <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl">
