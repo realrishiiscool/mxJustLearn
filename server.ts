@@ -154,17 +154,31 @@ const db = {
 // Register Endpoint
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role, secret_token } = req.body;
     
     if (!pool) return res.status(500).json({ success: false, error: 'Database not initialized' });
     
+    let userRole = 'student';
+    if (role === 'super_admin') {
+      if (secret_token !== 'admin-secret-xyz') {
+        return res.status(403).json({ success: false, error: 'Invalid or missing secret token' });
+      }
+      userRole = 'super_admin';
+    } else if (role === 'trainer') {
+      // In a real app, you'd check if the creator is an admin. 
+      // For this prototype, we'll allow it if role is explicitly trainer.
+      userRole = 'trainer';
+    } else if (role === 'corporate_admin') {
+      userRole = 'corporate_admin';
+    }
+
     const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     if ((existing as any[]).length > 0) {
       return res.status(400).json({ success: false, error: 'Email already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const [result] = await pool.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, hashedPassword]);
+    const [result] = await pool.query('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, userRole]);
     
     res.json({ success: true, message: 'User registered successfully', userId: (result as any).insertId });
   } catch (error: any) {

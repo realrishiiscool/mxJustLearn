@@ -28,8 +28,11 @@ export default function CorporateAdminDashboard() {
     try {
       const res = await fetch('/api/corporate/data');
       const data = await res.json();
-      setEmployees(data.employees);
-      setBudget(data.budget);
+      setEmployees(data.employees || []);
+      setBudget({
+        allocated: data.allocatedBudget || 0,
+        spent: data.spentBudget || 0
+      });
     } catch (e) {
       console.error(e);
     } finally {

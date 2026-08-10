@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole } from '../types';
 
 interface AuthModalProps {
@@ -8,11 +8,23 @@ interface AuthModalProps {
 
 export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
+  const [loginRole, setLoginRole] = useState<'student' | 'trainer'>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Hidden admin login trigger (Ctrl+Shift+A)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        window.location.href = '/admin-register'; // or handle a hidden admin login state if needed
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +50,20 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       }
 
       if (isLogin) {
+        // Enforce role check visually if they selected trainer but are student
+        if (data.user.role !== 'super_admin' && data.user.role !== 'corporate_admin') {
+           if (isLogin && loginRole === 'trainer' && data.user.role !== 'trainer') {
+             setError('This account does not have trainer privileges.');
+             setLoading(false);
+             return;
+           }
+           if (isLogin && loginRole === 'student' && data.user.role !== 'student') {
+             setError('This account is registered as a trainer. Please login as a trainer.');
+             setLoading(false);
+             return;
+           }
+        }
+        
         onSuccess(data.user);
       } else {
         // Auto-login after registration or show message
@@ -52,14 +78,40 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl">
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl relative">
+        <h2 className="text-2xl font-bold text-white mb-2 text-center">
           {isLogin ? 'Welcome Back' : 'Create an Account'}
         </h2>
+        <p className="text-center text-slate-400 text-sm mb-6">
+          {isLogin ? 'Sign in to continue your journey.' : 'Join the platform as a student.'}
+        </p>
+
+        {isLogin && (
+          <div className="flex bg-slate-950 p-1 rounded-xl mb-6 border border-slate-800">
+            <button
+              type="button"
+              onClick={() => setLoginRole('student')}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition ${
+                loginRole === 'student' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Student Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginRole('trainer')}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition ${
+                loginRole === 'trainer' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Trainer Login
+            </button>
+          </div>
+        )}
 
         {error && (
-          <div className="mb-4 p-3 rounded bg-red-500/20 text-red-400 text-sm border border-red-500/30">
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm border border-red-500/20 font-semibold">
             {error}
           </div>
         )}
@@ -67,38 +119,38 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
               <input 
                 type="text" 
                 required 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 placeholder="John Doe"
               />
             </div>
           )}
           
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
             <input 
               type="email" 
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Password</label>
             <input 
               type="password" 
               required 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               placeholder="••••••••"
             />
           </div>
@@ -106,7 +158,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-2.5 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition duration-150 flex justify-center items-center"
+            className="w-full py-3.5 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition duration-200"
           >
             {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}
           </button>
@@ -120,7 +172,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
               setIsLogin(!isLogin);
               setError('');
             }}
-            className="text-indigo-400 font-semibold hover:text-indigo-300 transition"
+            className="text-indigo-400 font-bold hover:text-indigo-300 transition"
           >
             {isLogin ? 'Create one' : 'Login here'}
           </button>
@@ -128,7 +180,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
+          className="absolute top-5 right-5 text-slate-500 hover:text-white transition"
         >
           ✕
         </button>

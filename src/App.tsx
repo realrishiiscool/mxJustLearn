@@ -15,6 +15,7 @@ import CorporateAdminDashboard from './components/CorporateAdminDashboard';
 import CoursePlayer from './components/CoursePlayer';
 import AssessmentEngine from './components/AssessmentEngine';
 import AuthModal from './components/AuthModal';
+import AdminRegisterModal from './components/AdminRegisterModal';
 
 export default function App() {
   // Current logged role or public state
@@ -55,6 +56,15 @@ export default function App() {
 
   // Auth Modal Visibility
   const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Admin Register Modal Visibility
+  const [showAdminRegister, setShowAdminRegister] = useState(false);
+
+  React.useEffect(() => {
+    if (window.location.pathname === '/admin-register') {
+      setShowAdminRegister(true);
+    }
+  }, []);
 
   const handleEnrollCourse = (courseId: string) => {
     if (!enrolledCourses.includes(courseId)) {
@@ -92,6 +102,21 @@ export default function App() {
             setCurrentRole(user.role || 'student');
             setActiveTab(user.role === 'student' ? 'dashboard' : `${user.role}_dashboard`);
             setShowAuthModal(false);
+          }}
+        />
+      )}
+
+      {/* 4. Admin Register Modal */}
+      {showAdminRegister && (
+        <AdminRegisterModal
+          onClose={() => {
+            setShowAdminRegister(false);
+            if (window.history.pushState) {
+              window.history.pushState({}, '', '/');
+            }
+          }}
+          onSuccess={(user) => {
+            setShowAdminRegister(false);
           }}
         />
       )}
