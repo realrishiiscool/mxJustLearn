@@ -21,16 +21,95 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
   const [learningOutcomes, setLearningOutcomes] = useState('');
   const [skillsCovered, setSkillsCovered] = useState('');
 
-  // Initial Module and Lesson details to start curriculum off
-  const [moduleTitle, setModuleTitle] = useState('Module 1: Course Overview & Setup');
-  const [lessonTitle, setLessonTitle] = useState('Lesson 1.1: Getting Started and Local Setup');
-  const [lessonVideo, setLessonVideo] = useState('https://www.youtube.com/embed/dQw4w9WgXcQ');
-  const [textContent, setTextContent] = useState('');
-  const [pdfUrl, setPdfUrl] = useState('');
+  // Curriculum structure builder state
+  interface FormLesson {
+    title: string;
+    videoUrl: string;
+    textContent: string;
+    pdfUrl: string;
+    duration: string;
+  }
+
+  interface FormModule {
+    title: string;
+    lessons: FormLesson[];
+  }
+
+  const [modules, setModules] = useState<FormModule[]>([
+    {
+      title: 'Module 1: Course Onboarding & Setup',
+      lessons: [
+        {
+          title: 'Lesson 1.1: Getting Started and Local Setup',
+          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+          textContent: '',
+          pdfUrl: '',
+          duration: '15 Mins'
+        }
+      ]
+    }
+  ]);
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const handleAddModule = () => {
+    setModules([
+      ...modules,
+      {
+        title: `Module ${modules.length + 1}: New Syllabus Module`,
+        lessons: [
+          {
+            title: `Lesson ${modules.length + 1}.1: New Lecture Topic`,
+            videoUrl: '',
+            textContent: '',
+            pdfUrl: '',
+            duration: '15 Mins'
+          }
+        ]
+      }
+    ]);
+  };
+
+  const handleRemoveModule = (modIdx: number) => {
+    if (modules.length === 1) return;
+    setModules(modules.filter((_, idx) => idx !== modIdx));
+  };
+
+  const handleModuleTitleChange = (modIdx: number, val: string) => {
+    const updated = [...modules];
+    updated[modIdx].title = val;
+    setModules(updated);
+  };
+
+  const handleAddLesson = (modIdx: number) => {
+    const updated = [...modules];
+    updated[modIdx].lessons.push({
+      title: `Lesson ${modIdx + 1}.${updated[modIdx].lessons.length + 1}: New Lecture Topic`,
+      videoUrl: '',
+      textContent: '',
+      pdfUrl: '',
+      duration: '15 Mins'
+    });
+    setModules(updated);
+  };
+
+  const handleRemoveLesson = (modIdx: number, lesIdx: number) => {
+    if (modules[modIdx].lessons.length === 1) return;
+    const updated = [...modules];
+    updated[modIdx].lessons = updated[modIdx].lessons.filter((_, idx) => idx !== lesIdx);
+    setModules(updated);
+  };
+
+  const handleLessonFieldChange = (modIdx: number, lesIdx: number, field: keyof FormLesson, val: string) => {
+    const updated = [...modules];
+    updated[modIdx].lessons[lesIdx] = {
+      ...updated[modIdx].lessons[lesIdx],
+      [field]: val
+    };
+    setModules(updated);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,24 +139,20 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
         description: description.trim(),
         learningOutcomes: learningOutcomes.split(',').map(item => item.trim()).filter(Boolean),
         skillsCovered: skillsCovered.split(',').map(item => item.trim()).filter(Boolean),
-        modules: [
-          {
-            id: 'mod-' + Math.random().toString(36).substring(2, 9),
-            title: moduleTitle.trim() || 'Module 1: Course Overview',
-            lessons: [
-              {
-                id: 'les-' + Math.random().toString(36).substring(2, 9),
-                title: lessonTitle.trim() || 'Lesson 1.1: Getting Started',
-                duration: '15 Mins',
-                videoUrl: lessonVideo.trim() || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-                textContent: textContent.trim(),
-                pdfUrl: pdfUrl.trim(),
-                previewAllowed: true,
-                isPrivateYoutube: false
-              }
-            ]
-          }
-        ],
+        modules: modules.map((mod, modIdx) => ({
+          id: 'mod-' + Math.random().toString(36).substring(2, 9) + `_${modIdx}`,
+          title: mod.title.trim() || `Module ${modIdx + 1}`,
+          lessons: mod.lessons.map((les, lesIdx) => ({
+            id: 'les-' + Math.random().toString(36).substring(2, 9) + `_${modIdx}_${lesIdx}`,
+            title: les.title.trim() || `Lesson ${modIdx + 1}.${lesIdx + 1}`,
+            duration: les.duration || '15 Mins',
+            videoUrl: les.videoUrl.trim(),
+            textContent: les.textContent.trim(),
+            pdfUrl: les.pdfUrl.trim(),
+            previewAllowed: modIdx === 0 && lesIdx === 0,
+            isPrivateYoutube: false
+          }))
+        })),
         faqs: [
           {
             question: 'Are there coding assignments included in this course?',
@@ -303,64 +378,133 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
             </div>
           </div>
 
-          {/* Section 4: Initial Curriculum Item */}
-          <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80 space-y-4">
-            <h3 className="font-extrabold text-sm text-slate-300 tracking-tight border-b border-slate-800 pb-2">4. Initial Course Module & Video Resource</h3>
-            <div className="space-y-3">
+          {/* Section 4: Curriculum Builder */}
+          <div className="bg-slate-950/40 p-6 rounded-3xl border border-slate-800/80 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
-                <label className="block text-slate-400 mb-1.5 font-semibold">Initial Module Title</label>
-                <input
-                  type="text"
-                  value={moduleTitle}
-                  onChange={(e) => setModuleTitle(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-350 focus:outline-none focus:border-indigo-500 transition"
-                />
+                <h3 className="font-extrabold text-sm text-slate-300 tracking-tight">4. Course Curriculum & Syllabus Structure</h3>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5">Define learning modules and their respective lessons</p>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-400 mb-1.5 font-semibold">Initial Lesson Name</label>
-                  <input
-                    type="text"
-                    value={lessonTitle}
-                    onChange={(e) => setLessonTitle(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-350 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-400 mb-1.5 font-semibold">Embedded Video Embed Link</label>
-                  <input
-                    type="text"
-                    value={lessonVideo}
-                    onChange={(e) => setLessonVideo(e.target.value)}
-                    placeholder="https://www.youtube.com/embed/..."
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-350 focus:outline-none"
-                  />
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={handleAddModule}
+                className="px-3.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 text-[10px] uppercase tracking-wider"
+              >
+                + Add Module Node
+              </button>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-400 mb-1.5 font-semibold">Reference PDF Document Link (URL)</label>
-                  <input
-                    type="text"
-                    value={pdfUrl}
-                    onChange={(e) => setPdfUrl(e.target.value)}
-                    placeholder="https://example.com/materials.pdf"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-350 focus:outline-none focus:border-indigo-500 transition"
-                  />
+            <div className="space-y-6">
+              {modules.map((mod, modIdx) => (
+                <div key={modIdx} className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 space-y-4 relative">
+                  
+                  {/* Module Header */}
+                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div className="flex-1">
+                      <label className="block text-[10px] text-indigo-400 font-mono uppercase tracking-wider mb-1">MODULE {modIdx + 1} TITLE</label>
+                      <input
+                        type="text"
+                        required
+                        value={mod.title}
+                        onChange={(e) => handleModuleTitleChange(modIdx, e.target.value)}
+                        placeholder="e.g. Module 1: Architecture Foundations"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-300 font-bold focus:outline-none focus:border-indigo-500 transition"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 self-start md:self-end">
+                      <button
+                        type="button"
+                        onClick={() => handleAddLesson(modIdx)}
+                        className="px-3 py-2 bg-slate-950 border border-slate-850 hover:bg-slate-900 text-slate-300 hover:text-white rounded-xl font-semibold transition cursor-pointer text-[10px]"
+                      >
+                        + Add Lesson
+                      </button>
+                      {modules.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveModule(modIdx)}
+                          className="px-3 py-2 bg-red-950/20 border border-red-900/30 text-red-400 hover:bg-red-950/40 rounded-xl font-semibold transition cursor-pointer text-[10px]"
+                        >
+                          Delete Module
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Lessons inside Module */}
+                  <div className="space-y-4 pt-2 border-t border-slate-850">
+                    <span className="block text-[10px] text-slate-500 font-mono uppercase tracking-wider">LESSONS PLAYLIST</span>
+                    {mod.lessons.map((les, lesIdx) => (
+                      <div key={lesIdx} className="bg-slate-950/50 p-4 rounded-xl border border-slate-850/80 space-y-3 relative group/lesson">
+                        
+                        {/* Lesson Header / Delete Button */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] text-slate-400 font-mono">Lesson {modIdx + 1}.{lesIdx + 1}</span>
+                          {mod.lessons.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLesson(modIdx, lesIdx)}
+                              className="text-red-450 hover:text-red-400 text-[10px] font-semibold transition cursor-pointer"
+                            >
+                              Remove Lesson
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Title & Video Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-slate-500 mb-1 font-semibold text-[10px]">Lesson Title *</label>
+                            <input
+                              type="text"
+                              required
+                              value={les.title}
+                              onChange={(e) => handleLessonFieldChange(modIdx, lesIdx, 'title', e.target.value)}
+                              placeholder="e.g. Getting Started & Architecture Overview"
+                              className="w-full bg-slate-900 border border-slate-850 rounded-lg px-3 py-1.5 text-slate-350 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-500 mb-1 font-semibold text-[10px]">YouTube Video Embed Link</label>
+                            <input
+                              type="text"
+                              value={les.videoUrl}
+                              onChange={(e) => handleLessonFieldChange(modIdx, lesIdx, 'videoUrl', e.target.value)}
+                              placeholder="https://www.youtube.com/embed/..."
+                              className="w-full bg-slate-900 border border-slate-850 rounded-lg px-3 py-1.5 text-slate-350 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* PDF & Material Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-slate-550 mb-1 font-semibold text-[10px]">Reference PDF Document Link (URL)</label>
+                            <input
+                              type="text"
+                              value={les.pdfUrl}
+                              onChange={(e) => handleLessonFieldChange(modIdx, lesIdx, 'pdfUrl', e.target.value)}
+                              placeholder="https://example.com/materials.pdf"
+                              className="w-full bg-slate-900 border border-slate-850 rounded-lg px-3 py-1.5 text-slate-350 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-550 mb-1 font-semibold text-[10px]">Lesson Material (Rich Text / HTML / Markdown)</label>
+                            <textarea
+                              value={les.textContent}
+                              onChange={(e) => handleLessonFieldChange(modIdx, lesIdx, 'textContent', e.target.value)}
+                              placeholder="e.g. # Introduction..."
+                              rows={2}
+                              className="w-full bg-slate-900 border border-slate-850 rounded-lg px-3 py-1.5 text-slate-350 focus:outline-none resize-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
                 </div>
-                <div>
-                  <label className="block text-slate-400 mb-1.5 font-semibold">Lesson Material (Rich Text / HTML / Markdown)</label>
-                  <textarea
-                    value={textContent}
-                    onChange={(e) => setTextContent(e.target.value)}
-                    placeholder="<h3>Topic Overview</h3><p>Use html tags for list, links or images.</p>"
-                    rows={2}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-slate-350 focus:outline-none focus:border-indigo-500 transition"
-                  />
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 

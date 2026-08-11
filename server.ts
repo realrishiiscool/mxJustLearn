@@ -10,6 +10,7 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { COURSES } from './src/data';
 
 // Initialize environment variables
@@ -45,13 +46,45 @@ async function initDb() {
     });
 
     const conn = await pool.getConnection();
+
+    // Create roles table
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS roles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(50) UNIQUE NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Seed default roles
+    await conn.query(`
+      INSERT IGNORE INTO roles (id, name, description) VALUES 
+      (1, 'student', 'Student Access'), 
+      (2, 'trainer', 'Trainer Access'), 
+      (3, 'corporate_admin', 'Corporate Admin Access'), 
+      (4, 'super_admin', 'Super Admin Access')
+    `);
+
     await conn.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        password_hash VARCHAR(255) NOT NULL,
+        phone VARCHAR(20),
+        qualification VARCHAR(100),
+        college VARCHAR(255),
+        skills JSON,
+        career_goal VARCHAR(255),
+        experience_level ENUM('fresher', 'junior', 'mid', 'senior'),
+        role_id INT,
+        streak INT DEFAULT 1,
+        xp_points INT DEFAULT 0,
+        coins INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (role_id) REFERENCES roles(id)
       )
     `);
 
@@ -60,15 +93,15 @@ async function initDb() {
       console.log('Seeding default users database...');
       const hashedPassword = await bcrypt.hash('password123', 10);
       await conn.query(`
-        INSERT INTO users (name, email, password, role)
-        VALUES ('User1 Student', 'user1@gmail.com', ?, 'student')
+        INSERT INTO users (name, email, password_hash, role_id)
+        VALUES ('User1 Student', 'user1@gmail.com', ?, 1)
       `, [hashedPassword]);
       console.log('Default users database seeded successfully.');
     }
 
     await conn.query(`
       CREATE TABLE IF NOT EXISTS courses (
-        id VARCHAR(255) PRIMARY KEY,
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
         title VARCHAR(255) NOT NULL,
         category VARCHAR(100) NOT NULL,
         instructor VARCHAR(255) NOT NULL,
@@ -77,21 +110,22 @@ async function initDb() {
         student_count INT DEFAULT 0,
         duration VARCHAR(50),
         price DECIMAL(10, 2) DEFAULT 0.00,
-        level VARCHAR(50),
+        level ENUM('Beginner', 'Intermediate', 'Advanced'),
         thumbnail_url TEXT,
         badge VARCHAR(50),
         description TEXT NOT NULL,
-        learning_outcomes TEXT,
-        skills_covered TEXT,
+        learning_outcomes JSON,
+        skills_covered JSON,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
     await conn.query(`
       CREATE TABLE IF NOT EXISTS modules (
-        id VARCHAR(255) PRIMARY KEY,
-        course_id VARCHAR(255) NOT NULL,
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        course_id VARCHAR(36),
         title VARCHAR(255) NOT NULL,
+        sort_order INT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
       )
@@ -99,23 +133,24 @@ async function initDb() {
 
     await conn.query(`
       CREATE TABLE IF NOT EXISTS lessons (
-        id VARCHAR(255) PRIMARY KEY,
-        module_id VARCHAR(255) NOT NULL,
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        module_id VARCHAR(36),
         title VARCHAR(255) NOT NULL,
         duration VARCHAR(50),
         video_url TEXT,
-        text_content TEXT,
+        content_markdown TEXT,
         pdf_url TEXT,
         preview_allowed BOOLEAN DEFAULT FALSE,
         is_private_youtube BOOLEAN DEFAULT FALSE,
+        sort_order INT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
       )
     `);
 
-    // Self-healing migrations for existing databases
+    // Self-healing migrations for manual schema load mismatches
     try {
-      await conn.query('ALTER TABLE lessons ADD COLUMN text_content TEXT');
+      await conn.query('ALTER TABLE lessons ADD COLUMN is_private_youtube BOOLEAN DEFAULT FALSE');
     } catch (e) {}
     try {
       await conn.query('ALTER TABLE lessons ADD COLUMN pdf_url TEXT');
@@ -151,18 +186,22 @@ async function initDb() {
           JSON.stringify(course.skillsCovered || [])
         ]);
 
+        let modIdx = 0;
         for (const mod of course.modules) {
+          modIdx++;
           const uniqueModId = `${course.id}_${mod.id}`;
           await conn.query(`
-            INSERT INTO modules (id, course_id, title)
-            VALUES (?, ?, ?)
-          `, [uniqueModId, course.id, mod.title]);
+            INSERT INTO modules (id, course_id, title, sort_order)
+            VALUES (?, ?, ?, ?)
+          `, [uniqueModId, course.id, mod.title, modIdx]);
 
+          let lesIdx = 0;
           for (const les of mod.lessons) {
+            lesIdx++;
             const uniqueLesId = `${course.id}_${mod.id}_${les.id}`;
             await conn.query(`
-              INSERT INTO lessons (id, module_id, title, duration, video_url, preview_allowed, is_private_youtube)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
+              INSERT INTO lessons (id, module_id, title, duration, video_url, preview_allowed, is_private_youtube, sort_order)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `, [
               uniqueLesId,
               uniqueModId,
@@ -170,7 +209,8 @@ async function initDb() {
               les.duration,
               les.videoUrl,
               les.previewAllowed ? 1 : 0,
-              les.isPrivateYoutube ? 1 : 0
+              les.isPrivateYoutube ? 1 : 0,
+              lesIdx
             ]);
           }
         }
@@ -182,7 +222,7 @@ async function initDb() {
       CREATE TABLE IF NOT EXISTS enrollments (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_email VARCHAR(255) NOT NULL,
-        course_id VARCHAR(255) NOT NULL,
+        course_id VARCHAR(36) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY unique_user_course (user_email, course_id),
         FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
@@ -308,8 +348,6 @@ app.post('/api/auth/register', async (req, res) => {
       }
       userRole = 'super_admin';
     } else if (role === 'trainer') {
-      // In a real app, you'd check if the creator is an admin. 
-      // For this prototype, we'll allow it if role is explicitly trainer.
       userRole = 'trainer';
     } else if (role === 'corporate_admin') {
       userRole = 'corporate_admin';
@@ -321,9 +359,19 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const [result] = await pool.query('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, userRole]);
     
-    res.json({ success: true, message: 'User registered successfully', userId: (result as any).insertId });
+    let roleId = 1; // default student
+    if (userRole === 'trainer') roleId = 2;
+    else if (userRole === 'corporate_admin') roleId = 3;
+    else if (userRole === 'super_admin') roleId = 4;
+
+    const userId = crypto.randomUUID();
+    await pool.query(
+      'INSERT INTO users (id, name, email, password_hash, role_id) VALUES (?, ?, ?, ?, ?)',
+      [userId, name, email, hashedPassword, roleId]
+    );
+    
+    res.json({ success: true, message: 'User registered successfully', userId });
   } catch (error: any) {
     console.error('Registration error:', error);
     res.status(500).json({ success: false, error: 'Server error during registration' });
@@ -337,14 +385,17 @@ app.post('/api/auth/login', async (req, res) => {
     
     if (!pool) return res.status(500).json({ success: false, error: 'Database not initialized' });
     
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    const [users] = await pool.query(
+      'SELECT u.*, r.name as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
+      [email]
+    );
     const user = (users as any[])[0];
     
     if (!user) {
       return res.status(400).json({ success: false, error: 'Invalid email or password' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(400).json({ success: false, error: 'Invalid email or password' });
     }
@@ -499,6 +550,16 @@ app.get('/api/admin/data', (req, res) => {
   res.json(db.adminData);
 });
 
+function parseJsonField(field: any): any[] {
+  if (field === null || field === undefined) return [];
+  if (typeof field === 'object') return field;
+  try {
+    return typeof field === 'string' ? JSON.parse(field) : field;
+  } catch (e) {
+    return [];
+  }
+}
+
 // Helper function to query and map courses list from database
 async function getCoursesList() {
   if (!pool) return [];
@@ -512,20 +573,20 @@ async function getCoursesList() {
       course.thumbnailUrl = course.thumbnail_url;
       course.instructorBio = course.instructor_bio;
       course.studentCount = course.student_count;
-      course.learningOutcomes = course.learning_outcomes ? JSON.parse(course.learning_outcomes) : [];
-      course.skillsCovered = course.skills_covered ? JSON.parse(course.skills_covered) : [];
+      course.learningOutcomes = parseJsonField(course.learning_outcomes);
+      course.skillsCovered = parseJsonField(course.skills_covered);
 
-      // Fetch modules for this course
-      const [modulesRows] = await conn.query('SELECT * FROM modules WHERE course_id = ? ORDER BY created_at ASC', [course.id]);
+      // Fetch modules for this course, ordered by sort_order
+      const [modulesRows] = await conn.query('SELECT * FROM modules WHERE course_id = ? ORDER BY sort_order ASC', [course.id]);
       course.modules = modulesRows as any[];
       
       for (const mod of course.modules) {
-        // Fetch lessons for this module
-        const [lessonsRows] = await conn.query('SELECT * FROM lessons WHERE module_id = ? ORDER BY created_at ASC', [mod.id]);
+        // Fetch lessons for this module, ordered by sort_order
+        const [lessonsRows] = await conn.query('SELECT * FROM lessons WHERE module_id = ? ORDER BY sort_order ASC', [mod.id]);
         mod.lessons = (lessonsRows as any[]).map(les => ({
           ...les,
           videoUrl: les.video_url,
-          textContent: les.text_content,
+          textContent: les.content_markdown, // Map content_markdown to textContent
           pdfUrl: les.pdf_url,
           previewAllowed: !!les.preview_allowed,
           isPrivateYoutube: !!les.is_private_youtube
@@ -597,29 +658,34 @@ app.post('/api/courses/add', async (req, res) => {
       ]);
 
       if (newCourse.modules && Array.isArray(newCourse.modules)) {
+        let modIdx = 0;
         for (const mod of newCourse.modules) {
+          modIdx++;
           const mId = mod.id || 'mod-' + Math.random().toString(36).substring(2, 9);
           await conn.query(`
-            INSERT INTO modules (id, course_id, title)
-            VALUES (?, ?, ?)
-          `, [mId, newCourse.id, mod.title]);
+            INSERT INTO modules (id, course_id, title, sort_order)
+            VALUES (?, ?, ?, ?)
+          `, [mId, newCourse.id, mod.title, modIdx]);
 
           if (mod.lessons && Array.isArray(mod.lessons)) {
+            let lesIdx = 0;
             for (const les of mod.lessons) {
+              lesIdx++;
               const lId = les.id || 'les-' + Math.random().toString(36).substring(2, 9);
               await conn.query(`
-                INSERT INTO lessons (id, module_id, title, duration, video_url, text_content, pdf_url, preview_allowed, is_private_youtube)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO lessons (id, module_id, title, duration, video_url, content_markdown, pdf_url, preview_allowed, is_private_youtube, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               `, [
                 lId,
                 mId,
                 les.title,
                 les.duration || '15 Mins',
                 les.videoUrl || '',
-                les.textContent || '',
+                les.textContent || '', // Map textContent to content_markdown
                 les.pdfUrl || '',
                 les.previewAllowed ? 1 : 0,
-                les.isPrivateYoutube ? 1 : 0
+                les.isPrivateYoutube ? 1 : 0,
+                lesIdx
               ]);
             }
           }
@@ -649,7 +715,7 @@ app.post('/api/courses/update-lesson', async (req, res) => {
     if (!pool) return res.status(500).json({ success: false, error: 'Database not connected' });
 
     await pool.query(`
-      UPDATE lessons SET video_url = ?, is_private_youtube = ?, text_content = ?, pdf_url = ? WHERE id = ? AND module_id = ?
+      UPDATE lessons SET video_url = ?, is_private_youtube = ?, content_markdown = ?, pdf_url = ? WHERE id = ? AND module_id = ?
     `, [videoUrl || '', isPrivateYoutube ? 1 : 0, textContent || '', pdfUrl || '', lessonId, moduleId]);
 
     const courses = await getCoursesList();
@@ -657,6 +723,133 @@ app.post('/api/courses/update-lesson', async (req, res) => {
   } catch (error: any) {
     console.error('Error updating lesson:', error);
     res.status(500).json({ success: false, error: error.message || 'Server error updating lesson' });
+  }
+});
+
+// Add a module (from Course Editor)
+app.post('/api/courses/add-module', async (req, res) => {
+  try {
+    const { courseId, title } = req.body;
+    if (!pool) return res.status(500).json({ success: false, error: 'Database not connected' });
+    if (!courseId || !title.trim()) return res.status(400).json({ success: false, error: 'Course ID and title are required' });
+
+    const conn = await pool.getConnection();
+    try {
+      // Find max sort_order
+      const [rows] = await conn.query('SELECT COALESCE(MAX(sort_order), 0) as maxSort FROM modules WHERE course_id = ?', [courseId]);
+      const nextSort = ((rows as any[])[0]?.maxSort || 0) + 1;
+
+      const newModId = `mod-${Math.random().toString(36).substring(2, 9)}`;
+      await conn.query(`
+        INSERT INTO modules (id, course_id, title, sort_order)
+        VALUES (?, ?, ?, ?)
+      `, [newModId, courseId, title.trim(), nextSort]);
+
+      // Seed an initial dummy lesson for this new module so it's not empty
+      const newLesId = `les-${Math.random().toString(36).substring(2, 9)}`;
+      await conn.query(`
+        INSERT INTO lessons (id, module_id, title, duration, content_markdown, sort_order)
+        VALUES (?, ?, 'Lesson 1: Welcome to this Module', '15 Mins', '', 1)
+      `, [newLesId, newModId]);
+
+    } finally {
+      conn.release();
+    }
+
+    const courses = await getCoursesList();
+    res.json({ success: true, courses });
+  } catch (error: any) {
+    console.error('Error adding module:', error);
+    res.status(500).json({ success: false, error: error.message || 'Server error adding module' });
+  }
+});
+
+// Add a lesson to a module (from Course Editor)
+app.post('/api/courses/add-lesson', async (req, res) => {
+  try {
+    const { moduleId, title } = req.body;
+    if (!pool) return res.status(500).json({ success: false, error: 'Database not connected' });
+    if (!moduleId || !title.trim()) return res.status(400).json({ success: false, error: 'Module ID and title are required' });
+
+    const conn = await pool.getConnection();
+    try {
+      // Find max sort_order
+      const [rows] = await conn.query('SELECT COALESCE(MAX(sort_order), 0) as maxSort FROM lessons WHERE module_id = ?', [moduleId]);
+      const nextSort = ((rows as any[])[0]?.maxSort || 0) + 1;
+
+      const newLesId = `les-${Math.random().toString(36).substring(2, 9)}`;
+      await conn.query(`
+        INSERT INTO lessons (id, module_id, title, duration, content_markdown, sort_order)
+        VALUES (?, ?, ?, '15 Mins', '', ?)
+      `, [newLesId, moduleId, title.trim(), nextSort]);
+
+    } finally {
+      conn.release();
+    }
+
+    const courses = await getCoursesList();
+    res.json({ success: true, courses });
+  } catch (error: any) {
+    console.error('Error adding lesson:', error);
+    res.status(500).json({ success: false, error: error.message || 'Server error adding lesson' });
+  }
+});
+
+// Delete a course (from Course Editor)
+app.post('/api/courses/delete', async (req, res) => {
+  try {
+    const { courseId } = req.body;
+    if (!pool) return res.status(500).json({ success: false, error: 'Database not connected' });
+    if (!courseId) return res.status(400).json({ success: false, error: 'Course ID is required' });
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.query('START TRANSACTION');
+
+      // 1. Delete course progress tracking
+      await conn.query(`
+        DELETE FROM user_course_progress WHERE lesson_id IN (
+          SELECT id FROM lessons WHERE module_id IN (
+            SELECT id FROM modules WHERE course_id = ?
+          )
+        )
+      `, [courseId]);
+
+      // 2. Delete lessons
+      await conn.query(`
+        DELETE FROM lessons WHERE module_id IN (
+          SELECT id FROM modules WHERE course_id = ?
+        )
+      `, [courseId]);
+
+      // 3. Delete modules
+      await conn.query('DELETE FROM modules WHERE course_id = ?', [courseId]);
+
+      // 4. Delete enrollments
+      await conn.query('DELETE FROM enrollments WHERE course_id = ?', [courseId]);
+
+      // 5. Delete certificates if any
+      await conn.query('DELETE FROM certificates WHERE course_id = ?', [courseId]);
+
+      // 6. Delete assessments if any
+      await conn.query('DELETE FROM assessments WHERE course_id = ?', [courseId]);
+
+      // 7. Finally delete the course row
+      await conn.query('DELETE FROM courses WHERE id = ?', [courseId]);
+
+      await conn.query('COMMIT');
+    } catch (err) {
+      await conn.query('ROLLBACK');
+      throw err;
+    } finally {
+      conn.release();
+    }
+
+    const courses = await getCoursesList();
+    res.json({ success: true, courses });
+  } catch (error: any) {
+    console.error('Error deleting course:', error);
+    res.status(500).json({ success: false, error: error.message || 'Server error deleting course' });
   }
 });
 

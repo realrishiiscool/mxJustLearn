@@ -17,6 +17,10 @@ export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorP
   const [pdfUrl, setPdfUrl] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Add module/lesson dynamic creation states
+  const [newModuleName, setNewModuleName] = useState('');
+  const [newLessonName, setNewLessonName] = useState('');
+
   const course = courses.find(c => c.id === selectedCourseId);
   const mod = course?.modules.find(m => m.id === selectedModuleId);
   const lesson = mod?.lessons.find(l => l.id === selectedLessonId);
@@ -28,6 +32,74 @@ export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorP
     setTextContent(l.textContent || '');
     setPdfUrl(l.pdfUrl || '');
     setSuccessMsg('');
+  };
+
+  const handleAddModule = async () => {
+    if (!newModuleName.trim() || !selectedCourseId) return;
+    try {
+      const res = await fetch('/api/courses/add-module', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId: selectedCourseId, title: newModuleName.trim() })
+      });
+      const data = await res.json();
+      if (data.success && data.courses) {
+        onCoursesUpdate(data.courses);
+        setNewModuleName('');
+        setSuccessMsg('Module added successfully!');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddLesson = async (moduleId: string) => {
+    if (!newLessonName.trim()) return;
+    try {
+      const res = await fetch('/api/courses/add-lesson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moduleId, title: newLessonName.trim() })
+      });
+      const data = await res.json();
+      if (data.success && data.courses) {
+        onCoursesUpdate(data.courses);
+        setNewLessonName('');
+        setSuccessMsg('Lesson added successfully!');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!selectedCourseId) return;
+    const confirmDelete = window.confirm("Are you sure you want to permanently delete this course? This action will remove all modules, lessons, and employee enrollments and CANNOT be undone.");
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch('/api/courses/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId: selectedCourseId })
+      });
+      const data = await res.json();
+      if (data.success && data.courses) {
+        onCoursesUpdate(data.courses);
+        setSelectedCourseId('');
+        setSelectedModuleId('');
+        setSelectedLessonId('');
+        setSuccessMsg('Course deleted successfully!');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } else {
+        setSuccessMsg('Server error: Failed to delete course.');
+      }
+    } catch (e) {
+      console.error(e);
+      setSuccessMsg('Error connecting to server to delete course.');
+    }
   };
 
   const handleSave = async () => {
@@ -93,36 +165,91 @@ export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorP
               <option value="">-- Choose Course --</option>
               {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
+            
+            {/* Delete Course Button */}
+            {selectedCourseId && (
+              <button
+                type="button"
+                onClick={handleDeleteCourse}
+                className="w-full mt-2 py-1.5 bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-900/30 font-bold rounded-lg transition cursor-pointer text-[10px] uppercase tracking-wider text-center"
+              >
+                Delete This Course
+              </button>
+            )}
           </div>
 
           {course && (
-            <div>
-              <label className="block text-slate-400 mb-1.5 font-semibold">Curriculum Modules</label>
-              <div className="space-y-2">
-                {course.modules.map(m => (
-                  <div key={m.id} className="space-y-1">
-                    <button
-                      onClick={() => setSelectedModuleId(m.id === selectedModuleId ? '' : m.id)}
-                      className={`w-full text-left px-3 py-2 rounded-lg font-semibold transition-colors ${selectedModuleId === m.id ? 'bg-indigo-600/20 text-indigo-400' : 'bg-slate-950 hover:bg-slate-800'}`}
-                    >
-                      {m.title}
-                    </button>
-                    {selectedModuleId === m.id && (
-                      <div className="pl-4 space-y-1 mt-1">
-                        {m.lessons.map(l => (
-                          <button
-                            key={l.id}
-                            onClick={() => handleLessonSelect(l)}
-                            className={`w-full text-left px-3 py-1.5 rounded flex items-center gap-2 ${selectedLessonId === l.id ? 'bg-indigo-600/40 text-white' : 'hover:bg-slate-800 text-slate-400'}`}
-                          >
-                            <PlayCircle className="w-3 h-3" />
-                            <span className="truncate">{l.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-slate-400 mb-1.5 font-semibold">Curriculum Modules</label>
+                <div className="space-y-2">
+                  {course.modules.map(m => (
+                    <div key={m.id} className="space-y-1">
+                      <button
+                        onClick={() => {
+                          setSelectedModuleId(m.id === selectedModuleId ? '' : m.id);
+                          setNewLessonName('');
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg font-semibold transition-colors ${selectedModuleId === m.id ? 'bg-indigo-600/20 text-indigo-400' : 'bg-slate-950 hover:bg-slate-800'}`}
+                      >
+                        {m.title}
+                      </button>
+                      {selectedModuleId === m.id && (
+                        <div className="pl-4 space-y-1 mt-1 border-l border-slate-800">
+                          {m.lessons.map(l => (
+                            <button
+                              key={l.id}
+                              onClick={() => handleLessonSelect(l)}
+                              className={`w-full text-left px-3 py-1.5 rounded flex items-center gap-2 ${selectedLessonId === l.id ? 'bg-indigo-600/40 text-white' : 'hover:bg-slate-800 text-slate-400'}`}
+                            >
+                              <PlayCircle className="w-3 h-3" />
+                              <span className="truncate">{l.title}</span>
+                            </button>
+                          ))}
+                          
+                          {/* Dynamic Lesson Adder */}
+                          <div className="flex gap-1.5 pt-2 px-1">
+                            <input
+                              type="text"
+                              placeholder="New Lesson Name..."
+                              value={newLessonName}
+                              onChange={(e) => setNewLessonName(e.target.value)}
+                              className="flex-1 bg-slate-950 border border-slate-850 rounded px-2.5 py-1 text-[10px] text-slate-200 focus:outline-none focus:border-indigo-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddLesson(m.id)}
+                              className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold text-[10px] transition cursor-pointer"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dynamic Module Adder */}
+              <div className="mt-4 pt-4 border-t border-slate-800 space-y-2">
+                <label className="block text-slate-400 font-semibold text-[10px] uppercase tracking-wider">Add New Module</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. Module 3: Advanced Microservices"
+                    value={newModuleName}
+                    onChange={(e) => setNewModuleName(e.target.value)}
+                    className="flex-1 bg-slate-950 border border-slate-850 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500 text-[11px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddModule}
+                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition cursor-pointer text-[11px]"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
           )}
