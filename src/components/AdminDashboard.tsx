@@ -4,15 +4,30 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Database, Users, TrendingUp, RefreshCw, Terminal, DollarSign, BookOpen, ChevronRight, Activity, Server, Zap } from 'lucide-react';
+import { Shield, Database, Users, TrendingUp, RefreshCw, Terminal, IndianRupee, BookOpen, ChevronRight, Activity, Server, Zap, Plus } from 'lucide-react';
 import { DATABASE_SCHEMA_DDL } from '../data';
 import CourseEditor from './CourseEditor';
 import CreateUserForm from './CreateUserForm';
+import AddCourseForm from './AddCourseForm';
+import { Course } from '../types';
 
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  courses: Course[];
+  onCoursesUpdate: (courses: Course[]) => void;
+  allowTrainerAddCourse: boolean;
+  onToggleTrainerPermission: () => Promise<void> | void;
+}
+
+export default function AdminDashboard({
+  courses,
+  onCoursesUpdate,
+  allowTrainerAddCourse,
+  onToggleTrainerPermission
+}: AdminDashboardProps) {
   const [adminStats, setAdminStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [activeSchemaTab, setActiveSchemaTab] = useState<'ddl' | 'tables'>('ddl');
+  const [showAddCourseModal, setShowAddCourseModal] = useState(false);
 
   useEffect(() => {
     fetchAdminData();
@@ -88,7 +103,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { icon: Users, label: 'Active Users', value: `${adminStats.activeUsers}`, color: 'from-blue-500 to-cyan-500', shadow: 'shadow-blue-500/20' },
-          { icon: DollarSign, label: 'Monthly MRR', value: `$${adminStats.subscriptionSales.toLocaleString()}`, color: 'from-emerald-500 to-green-500', shadow: 'shadow-emerald-500/20' },
+          { icon: IndianRupee, label: 'Monthly MRR', value: `₹${adminStats.subscriptionSales.toLocaleString()}`, color: 'from-emerald-500 to-green-500', shadow: 'shadow-emerald-500/20' },
           { icon: BookOpen, label: 'Licenses Sold', value: adminStats.courseSales, color: 'from-purple-500 to-pink-500', shadow: 'shadow-purple-500/20' },
           { icon: TrendingUp, label: 'Placement Rate', value: '94.8%', color: 'from-orange-500 to-amber-500', shadow: 'shadow-orange-500/20' }
         ].map((stat, idx) => (
@@ -179,12 +194,58 @@ export default function AdminDashboard() {
           </div>
 
           <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-xl">
-            <CourseEditor />
+            <CourseEditor courses={courses} onCoursesUpdate={onCoursesUpdate} />
           </div>
         </div>
 
         {/* Right Column: Forms & Audit */}
         <div className="space-y-8">
+          {/* System Configuration & Course Creation Card */}
+          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl relative overflow-hidden shadow-xl">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[50px] -z-10"></div>
+            
+            <h3 className="font-bold text-xl text-white mb-4 flex items-center gap-3">
+              <div className="p-2 bg-indigo-500/10 rounded-lg">
+                <Server className="w-5 h-5 text-indigo-400" />
+              </div>
+              Course Permissions & Tools
+            </h3>
+            <p className="text-slate-400 text-xs mb-6">
+              Configure trainer access parameters and build new modules.
+            </p>
+
+            {/* Course Addition Trigger */}
+            <button
+              onClick={() => setShowAddCourseModal(true)}
+              className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Create New Course
+            </button>
+
+            <div className="border-t border-slate-800/80 my-5 pt-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-xs font-bold text-slate-200">Trainer Course Addition</span>
+                  <span className="block text-[10px] text-slate-500 mt-0.5">Extend curriculum creation access to trainer role</span>
+                </div>
+                
+                {/* Styled Switch Toggle */}
+                <button 
+                  onClick={onToggleTrainerPermission}
+                  className={`w-11 h-6 rounded-full relative p-0.5 transition-colors duration-300 focus:outline-none cursor-pointer ${
+                    allowTrainerAddCourse ? 'bg-indigo-600' : 'bg-slate-800'
+                  }`}
+                >
+                  <div 
+                    className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
+                      allowTrainerAddCourse ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Course sales leaderboards */}
           <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl relative overflow-hidden shadow-xl">
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-[50px] -z-10"></div>
@@ -231,6 +292,13 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {showAddCourseModal && (
+        <AddCourseForm 
+          onClose={() => setShowAddCourseModal(false)}
+          onSuccess={onCoursesUpdate}
+        />
+      )}
     </div>
   );
 }

@@ -4,14 +4,27 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Users, Calendar, Plus, FileText, CheckCircle2, TrendingUp, RefreshCw, BookOpen, Star, Mail, GraduationCap, Video, Target } from 'lucide-react';
+import { Users, Calendar, Plus, FileText, CheckCircle2, TrendingUp, RefreshCw, BookOpen, Star, Mail, GraduationCap, Video, Target, Lock } from 'lucide-react';
 import CourseEditor from './CourseEditor';
+import AddCourseForm from './AddCourseForm';
+import { Course } from '../types';
 
-export default function TrainerDashboard() {
+interface TrainerDashboardProps {
+  courses: Course[];
+  onCoursesUpdate: (courses: Course[]) => void;
+  allowTrainerAddCourse: boolean;
+}
+
+export default function TrainerDashboard({
+  courses,
+  onCoursesUpdate,
+  allowTrainerAddCourse
+}: TrainerDashboardProps) {
   const [classes, setClasses] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showAddCourseModal, setShowAddCourseModal] = useState(false);
 
   // Form states
   const [newClassTitle, setNewClassTitle] = useState('');
@@ -291,8 +304,43 @@ export default function TrainerDashboard() {
         </div>
       </div>
 
+      {/* Course Addition & Roster Tools */}
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-[50px] -z-10"></div>
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h3 className="font-bold text-xl text-white flex items-center gap-3">
+              <div className="p-2 bg-violet-500/10 rounded-lg text-violet-400">
+                <Video className="w-5 h-5" />
+              </div>
+              Course Builder Tools
+            </h3>
+            <p className="text-slate-400 text-xs mt-1.5">
+              Assemble dynamic coding roadmaps, video resources, and lessons.
+            </p>
+          </div>
+
+          <div>
+            {allowTrainerAddCourse ? (
+              <button
+                onClick={() => setShowAddCourseModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 transition-all duration-300 flex items-center gap-2 cursor-pointer text-xs"
+              >
+                <Plus className="w-4 h-4" /> Create New Course
+              </button>
+            ) : (
+              <div className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-slate-500">
+                <Lock className="w-4 h-4 text-red-500/70" />
+                <span>Course Creation Locked (Admin Permission Required)</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-xl">
-        <CourseEditor />
+        <CourseEditor courses={courses} onCoursesUpdate={onCoursesUpdate} />
       </div>
 
       {/* Students Performance Grid log */}
@@ -365,6 +413,13 @@ export default function TrainerDashboard() {
           </table>
         </div>
       </div>
+
+      {showAddCourseModal && (
+        <AddCourseForm 
+          onClose={() => setShowAddCourseModal(false)}
+          onSuccess={onCoursesUpdate}
+        />
+      )}
     </div>
   );
 }

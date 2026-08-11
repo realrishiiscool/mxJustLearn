@@ -302,7 +302,7 @@ CREATE TABLE notifications (
 export const PRICING_PLANS = [
   {
     name: "Free Plan",
-    price: "$0",
+    price: "₹0",
     period: "Forever",
     badge: "Basic Access",
     features: [
@@ -322,7 +322,7 @@ export const PRICING_PLANS = [
   },
   {
     name: "Starter Plan",
-    price: "$29",
+    price: "₹2,500",
     period: "per month",
     badge: "Solo Learner",
     features: [
@@ -341,7 +341,7 @@ export const PRICING_PLANS = [
   },
   {
     name: "Professional Plan",
-    price: "$49",
+    price: "₹3,900",
     period: "per month",
     badge: "Most Popular",
     isPopular: true,
@@ -358,7 +358,7 @@ export const PRICING_PLANS = [
   },
   {
     name: "Career Accelerator Plan",
-    price: "$99",
+    price: "₹7,900",
     period: "per month",
     badge: "Career Ready",
     features: [

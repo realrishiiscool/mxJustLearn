@@ -4,9 +4,10 @@ import {
   BookOpen, Clock, Target, Plus, ChevronRight, Bookmark, ArrowUpRight, Check
 } from 'lucide-react';
 import { Course, UserProfile } from '../types';
-import { COURSES, CAREER_PATHS } from '../data';
+import { CAREER_PATHS } from '../data';
 
 interface LearningRoadmapProps {
+  courses: Course[];
   profile: UserProfile;
   setProfile: (profile: UserProfile) => void;
   enrolledCourses: string[];
@@ -26,6 +27,7 @@ interface CourseProgressDetail {
 }
 
 export default function LearningRoadmap({
+  courses,
   profile,
   setProfile,
   enrolledCourses,
@@ -38,7 +40,7 @@ export default function LearningRoadmap({
     // Generate initial realistic progresses
     const initialProgress: Record<string, CourseProgressDetail> = {};
     
-    COURSES.forEach(course => {
+    courses.forEach(course => {
       let totalLessons = 0;
       course.modules.forEach(m => totalLessons += m.lessons.length);
       
@@ -143,8 +145,8 @@ export default function LearningRoadmap({
 
   // Find enrolled courses
   // Ensure we display at least some enrolled courses to prevent empty state
-  const enrolledList = COURSES.filter(c => enrolledCourses.includes(c.id));
-  const otherCourses = COURSES.filter(c => !enrolledCourses.includes(c.id));
+  const enrolledList = courses.filter(c => enrolledCourses.includes(c.id));
+  const otherCourses = courses.filter(c => !enrolledCourses.includes(c.id));
 
   // Determine current active learning target
   const careerGoalNormalized = (profile.careerGoal || tempCareerGoal).toLowerCase();
@@ -152,7 +154,7 @@ export default function LearningRoadmap({
   // Custom logic to recommend future learning paths based on current student career goal
   const getSuggestedCourses = () => {
     // Filter out already enrolled/completed courses for recommendations
-    const pool = COURSES.filter(c => !enrolledCourses.includes(c.id));
+    const pool = courses.filter(c => !enrolledCourses.includes(c.id));
     
     if (careerGoalNormalized.includes('java') || careerGoalNormalized.includes('spring')) {
       return pool.sort((a, b) => {
@@ -515,7 +517,7 @@ export default function LearningRoadmap({
                       
                       <div className="flex justify-between items-center pt-1.5">
                         <span className="text-[11px] font-black text-white">
-                          ${course.price}
+                          ₹{course.price}
                         </span>
                         <button
                           onClick={() => onEnrollCourse(course.id)}

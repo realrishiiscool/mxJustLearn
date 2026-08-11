@@ -11,13 +11,14 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import { Course, UserProfile, Job, CommunityPost } from '../types';
-import { COURSES, CAREER_PATHS, JOB_LISTINGS, COMMUNITY_POSTS, STUDENT_PROJECTS } from '../data';
+import { CAREER_PATHS, JOB_LISTINGS, COMMUNITY_POSTS, STUDENT_PROJECTS } from '../data';
 import ResumeBuilder from './ResumeBuilder';
 import LearningRoadmap from './LearningRoadmap';
 import StudentLeaderboard from './StudentLeaderboard';
 import StudentBadges from './StudentBadges';
 
 interface StudentDashboardProps {
+  courses: Course[];
   profile: UserProfile;
   setProfile: (profile: UserProfile) => void;
   enrolledCourses: string[];
@@ -29,6 +30,7 @@ interface StudentDashboardProps {
 }
 
 export default function StudentDashboard({
+  courses,
   profile,
   setProfile,
   enrolledCourses,
@@ -88,9 +90,9 @@ export default function StudentDashboard({
 
   // --- FLOATING AI MENTOR STATE VARIABLES & CODES ---
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const enrolledCourseObjects = COURSES.filter(c => enrolledCourses.includes(c.id));
-  const availableContextCourses = enrolledCourseObjects.length > 0 ? enrolledCourseObjects : COURSES;
-  const [selectedCourseContext, setSelectedCourseContext] = useState<Course>(availableContextCourses[0] || COURSES[0]);
+  const enrolledCourseObjects = courses.filter(c => enrolledCourses.includes(c.id));
+  const availableContextCourses = enrolledCourseObjects.length > 0 ? enrolledCourseObjects : courses;
+  const [selectedCourseContext, setSelectedCourseContext] = useState<Course>(availableContextCourses[0] || courses[0]);
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'model'; content: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -639,7 +641,7 @@ export default function StudentDashboard({
               <h3 className="font-bold text-base text-white mb-4">My Enrolled Course Modules</h3>
               <div className="space-y-4">
                 {enrolledCourses.map((cId) => {
-                  const course = COURSES.find(c => c.id === cId);
+                  const course = courses.find(c => c.id === cId);
                   if (!course) return null;
                   return (
                     <div key={course.id} className="bg-slate-950 border border-slate-850 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -822,6 +824,7 @@ export default function StudentDashboard({
       {/* LEARNING ROADMAP TIMELINE & RECOMMENDATIONS */}
       {studentSubTab === 'roadmap' && (
         <LearningRoadmap
+          courses={courses}
           profile={profile}
           setProfile={setProfile}
           enrolledCourses={enrolledCourses}
@@ -1361,7 +1364,7 @@ export default function StudentDashboard({
               <select
                 value={selectedCourseContext.id}
                 onChange={(e) => {
-                  const course = COURSES.find(c => c.id === e.target.value);
+                  const course = courses.find(c => c.id === e.target.value);
                   if (course) setSelectedCourseContext(course);
                 }}
                 className="flex-1 bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-[10px] text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 font-semibold truncate cursor-pointer"

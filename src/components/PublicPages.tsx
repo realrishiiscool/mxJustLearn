@@ -6,9 +6,10 @@
 import React, { useState } from 'react';
 import { Search, Filter, PlayCircle, Star, Users, Clock, ArrowRight, CheckCircle2, ChevronRight, BookOpen, AlertCircle, Sparkles } from 'lucide-react';
 import { Course } from '../types';
-import { COURSES, PRICING_PLANS } from '../data';
+import { PRICING_PLANS } from '../data';
 
 interface PublicPagesProps {
+  courses: Course[];
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onSelectCourse: (course: Course) => void;
@@ -18,6 +19,7 @@ interface PublicPagesProps {
 }
 
 export default function PublicPages({
+  courses,
   activeTab,
   setActiveTab,
   onSelectCourse,
@@ -33,7 +35,7 @@ export default function PublicPages({
   const categories = ['All', 'Software Engineering', 'Data Science', 'Artificial Intelligence', 'Automation Testing'];
 
   // Handle Catalog Filters
-  const filteredCourses = COURSES.filter((course) => {
+  const filteredCourses = courses.filter((course) => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           course.skillsCovered.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
                           course.instructor.toLowerCase().includes(searchQuery.toLowerCase());
@@ -104,8 +106,8 @@ export default function PublicPages({
             <div className="mb-6">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">PROGRAM PRICE</span>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-black text-white">${selectedCourse.price}</span>
-                <span className="text-slate-550 text-xs font-semibold line-through">${(selectedCourse.price * 1.5).toFixed(0)}</span>
+                 <span className="text-3xl font-black text-white">₹{selectedCourse.price}</span>
+                 <span className="text-slate-550 text-xs font-semibold line-through">₹{(selectedCourse.price * 1.5).toFixed(0)}</span>
               </div>
               <span className="text-[10px] text-green-400 font-semibold mt-1 block">Full life-long platform access</span>
             </div>
@@ -289,7 +291,7 @@ export default function PublicPages({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {COURSES.slice(0, 3).map((course) => (
+            {courses.slice(0, 3).map((course) => (
               <div
                 key={course.id}
                 id={`course-card-${course.id}`}

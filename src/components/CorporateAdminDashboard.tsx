@@ -83,11 +83,11 @@ export default function CorporateAdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
           <span className="text-slate-500 text-[10px] font-mono font-bold uppercase tracking-wider block">ALLOCATED TRAINING BUDGET</span>
-          <span className="text-2xl font-black text-white mt-1 block">${budget.allocated.toLocaleString()} USD</span>
+          <span className="text-2xl font-black text-white mt-1 block">₹{budget.allocated.toLocaleString()}</span>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-          <span className="text-slate-500 text-[10px] font-mono font-bold uppercase tracking-wider block">SPENT TRAINING BUDGET</span>
-          <span className="text-2xl font-black text-green-400 mt-1 block">${budget.spent.toLocaleString()} USD</span>
+          <span className="text-slate-550 text-[10px] font-mono font-bold uppercase tracking-wider block">SPENT TRAINING BUDGET</span>
+          <span className="text-2xl font-black text-green-400 mt-1 block">₹{budget.spent.toLocaleString()}</span>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
           <span className="text-slate-500 text-[10px] font-mono font-bold uppercase tracking-wider block">ACTIVE REGISTERED ROSTER</span>

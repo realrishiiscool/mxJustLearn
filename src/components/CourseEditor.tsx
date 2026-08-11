@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
-import { COURSES } from '../data';
 import { Course, Module, Lesson } from '../types';
 import { Save, Edit2, PlayCircle, Lock } from 'lucide-react';
 
-export default function CourseEditor() {
-  const [selectedCourseId, setSelectedCourseId] = useState<string>(COURSES[0]?.id || '');
+interface CourseEditorProps {
+  courses: Course[];
+  onCoursesUpdate: (courses: Course[]) => void;
+}
+
+export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorProps) {
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(courses[0]?.id || '');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('');
   const [selectedLessonId, setSelectedLessonId] = useState<string>('');
   const [videoUrl, setVideoUrl] = useState('');
   const [isPrivateYoutube, setIsPrivateYoutube] = useState(false);
+  const [textContent, setTextContent] = useState('');
+  const [pdfUrl, setPdfUrl] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const course = COURSES.find(c => c.id === selectedCourseId);
+  const course = courses.find(c => c.id === selectedCourseId);
   const mod = course?.modules.find(m => m.id === selectedModuleId);
   const lesson = mod?.lessons.find(l => l.id === selectedLessonId);
 
@@ -19,15 +25,46 @@ export default function CourseEditor() {
     setSelectedLessonId(l.id);
     setVideoUrl(l.videoUrl);
     setIsPrivateYoutube(!!l.isPrivateYoutube);
+    setTextContent(l.textContent || '');
+    setPdfUrl(l.pdfUrl || '');
     setSuccessMsg('');
   };
 
-  const handleSave = () => {
-    if (lesson) {
-      lesson.videoUrl = videoUrl;
-      lesson.isPrivateYoutube = isPrivateYoutube;
-      setSuccessMsg('Lesson updated successfully!');
-      setTimeout(() => setSuccessMsg(''), 3000);
+  const handleSave = async () => {
+    if (lesson && course && mod) {
+      try {
+        const res = await fetch('/api/courses/update-lesson', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            courseId: course.id,
+            moduleId: mod.id,
+            lessonId: lesson.id,
+            videoUrl,
+            isPrivateYoutube,
+            textContent,
+            pdfUrl
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.courses) {
+          onCoursesUpdate(data.courses);
+          setSuccessMsg('Lesson updated successfully!');
+          setTimeout(() => setSuccessMsg(''), 3000);
+        } else {
+          setSuccessMsg('Server error: Failed to update lesson.');
+        }
+      } catch (e) {
+        console.error(e);
+        // Fallback update in-session
+        lesson.videoUrl = videoUrl;
+        lesson.isPrivateYoutube = isPrivateYoutube;
+        lesson.textContent = textContent;
+        lesson.pdfUrl = pdfUrl;
+        onCoursesUpdate([...courses]);
+        setSuccessMsg('Lesson updated in-session (offline).');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      }
     }
   };
 
@@ -54,7 +91,7 @@ export default function CourseEditor() {
               className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-300 focus:outline-none"
             >
               <option value="">-- Choose Course --</option>
-              {COURSES.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
           </div>
 
@@ -112,6 +149,28 @@ export default function CourseEditor() {
                   onChange={(e) => setVideoUrl(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-300 focus:outline-none"
                   placeholder="https://www.youtube.com/embed/..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1.5 font-semibold">Reference PDF Document Link (URL)</label>
+                <input
+                  type="text"
+                  value={pdfUrl}
+                  onChange={(e) => setPdfUrl(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-300 focus:outline-none"
+                  placeholder="https://example.com/materials.pdf"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1.5 font-semibold">Lesson Material (Rich Text / HTML / Markdown)</label>
+                <textarea
+                  value={textContent}
+                  onChange={(e) => setTextContent(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-300 focus:outline-none"
+                  placeholder="<h3>Overview</h3><p>Content goes here...</p>"
+                  rows={4}
                 />
               </div>
 

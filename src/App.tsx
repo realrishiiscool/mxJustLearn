@@ -21,6 +21,56 @@ export default function App() {
   // Current logged role or public state
   const [currentRole, setCurrentRole] = useState<UserRole | 'public'>('public');
 
+  // Courses state fetched from server
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [allowTrainerAddCourse, setAllowTrainerAddCourse] = useState(false);
+
+  const fetchCourses = async () => {
+    try {
+      const res = await fetch('/api/courses');
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setCourses(data);
+      }
+    } catch (e) {
+      console.error('Error fetching courses:', e);
+    }
+  };
+
+  const fetchPermissions = async () => {
+    try {
+      const res = await fetch('/api/admin/permissions');
+      const data = await res.json();
+      if (data && typeof data.allowTrainerAddCourse === 'boolean') {
+        setAllowTrainerAddCourse(data.allowTrainerAddCourse);
+      }
+    } catch (e) {
+      console.error('Error fetching permissions:', e);
+    }
+  };
+
+  const handleToggleTrainerPermission = async () => {
+    try {
+      const res = await fetch('/api/admin/permissions/toggle', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setAllowTrainerAddCourse(data.allowTrainerAddCourse);
+      }
+    } catch (e) {
+      console.error('Error toggling permissions:', e);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  React.useEffect(() => {
+    if (currentRole === 'super_admin' || currentRole === 'trainer') {
+      fetchPermissions();
+    }
+  }, [currentRole]);
+
   // Currently authenticated profile state
   const [profile, setProfile] = useState<UserProfile>({
     id: 'user-01',
@@ -40,7 +90,7 @@ export default function App() {
   });
 
   // Track enrolled courses (initialized with one active course)
-  const [enrolledCourses, setEnrolledCourses] = useState<string[]>(['course-01']);
+  const [enrolledCourses, setEnrolledCourses] = useState<string[]>(['java-fs']);
 
   // Active playing view tracking
   const [activePlayCourse, setActivePlayCourse] = useState<Course | null>(null);
@@ -66,9 +116,37 @@ export default function App() {
     }
   }, []);
 
-  const handleEnrollCourse = (courseId: string) => {
-    if (!enrolledCourses.includes(courseId)) {
-      setEnrolledCourses([...enrolledCourses, courseId]);
+  const fetchUserEnrollments = async (email: string) => {
+    try {
+      const res = await fetch(`/api/users/enrollments?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.success && data.enrolledCourses) {
+        setEnrolledCourses(data.enrolledCourses);
+      }
+    } catch (e) {
+      console.error('Error fetching user enrollments:', e);
+    }
+  };
+
+  const handleEnrollCourse = async (courseId: string) => {
+    try {
+      const res = await fetch('/api/courses/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: profile.email,
+          courseId
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.enrolledCourses) {
+        setEnrolledCourses(data.enrolledCourses);
+      }
+    } catch (e) {
+      console.error('Error enrolling course:', e);
+      if (!enrolledCourses.includes(courseId)) {
+        setEnrolledCourses([...enrolledCourses, courseId]);
+      }
     }
   };
 
@@ -102,6 +180,9 @@ export default function App() {
             setCurrentRole(user.role || 'student');
             setActiveTab(user.role === 'student' ? 'dashboard' : `${user.role}_dashboard`);
             setShowAuthModal(false);
+            if (user.email) {
+              fetchUserEnrollments(user.email);
+            }
           }}
         />
       )}
@@ -131,7 +212,7 @@ export default function App() {
             setCurrentRole={(role) => {
               setCurrentRole(role);
               if (role === 'student') {
-                setActiveTab('student_dashboard');
+                setActiveTab('dashboard');
               } else if (role === 'trainer') {
                 setActiveTab('trainer_dashboard');
               } else if (role === 'super_admin') {
@@ -146,6 +227,23 @@ export default function App() {
             onLogout={() => {
               setCurrentRole('public');
               setActiveTab('home');
+              setEnrolledCourses(['java-fs']);
+              setProfile({
+                id: 'user-01',
+                name: 'Ram Prasad',
+                email: 'ramprasadsuthi@gmail.com',
+                phone: '+91 98765 43210',
+                college: 'MX University of Science',
+                qualification: 'B.Tech CS / Fresher',
+                careerGoal: 'Java Full Stack & Gen AI Solutions',
+                skills: ['Java', 'HTML', 'SQL'],
+                streak: 4,
+                xpPoints: 340,
+                coins: 45,
+                role: 'student',
+                subscription: 'standard',
+                completedCourses: []
+              });
             }}
             onOpenLogin={() => {
               setShowAuthModal(true);
@@ -176,6 +274,23 @@ export default function App() {
                     onClick={() => {
                       setCurrentRole('public');
                       setActiveTab('home');
+                      setEnrolledCourses(['java-fs']);
+                      setProfile({
+                        id: 'user-01',
+                        name: 'Ram Prasad',
+                        email: 'ramprasadsuthi@gmail.com',
+                        phone: '+91 98765 43210',
+                        college: 'MX University of Science',
+                        qualification: 'B.Tech CS / Fresher',
+                        careerGoal: 'Java Full Stack & Gen AI Solutions',
+                        skills: ['Java', 'HTML', 'SQL'],
+                        streak: 4,
+                        xpPoints: 340,
+                        coins: 45,
+                        role: 'student',
+                        subscription: 'standard',
+                        completedCourses: []
+                      });
                     }}
                     className="ml-2 px-3 py-1.5 text-xs font-semibold text-red-400 bg-red-950/20 rounded-lg hover:bg-red-950/40 border border-red-900/30 transition duration-150"
                   >
@@ -190,6 +305,7 @@ export default function App() {
             {/* PUBLIC VIEWPORT */}
             {currentRole === 'public' && (
               <PublicPages
+                courses={courses}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 selectedCourse={selectedCourse}
@@ -207,6 +323,7 @@ export default function App() {
                   <div>
                     {(activeTab === 'home' || activeTab === 'catalog') && (
                       <PublicPages
+                        courses={courses}
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
                         selectedCourse={selectedCourse}
@@ -217,6 +334,7 @@ export default function App() {
                     )}
                     {(activeTab === 'dashboard' || activeTab === 'resume_builder' || activeTab === 'career_paths' || activeTab === 'internship_portal' || activeTab === 'community') && (
                       <StudentDashboard
+                        courses={courses}
                         profile={profile}
                         setProfile={setProfile}
                         enrolledCourses={enrolledCourses}
@@ -239,9 +357,16 @@ export default function App() {
                 {/* 2. TRAINER WORKSPACE */}
                 {currentRole === 'trainer' && (
                   <div>
-                    {activeTab === 'trainer_dashboard' && <TrainerDashboard />}
+                    {activeTab === 'trainer_dashboard' && (
+                      <TrainerDashboard
+                        courses={courses}
+                        onCoursesUpdate={setCourses}
+                        allowTrainerAddCourse={allowTrainerAddCourse}
+                      />
+                    )}
                     {activeTab === 'catalog' && (
                       <PublicPages
+                        courses={courses}
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
                         selectedCourse={selectedCourse}
@@ -256,9 +381,17 @@ export default function App() {
                 {/* 3. SUPER ADMIN COMMAND WORKSPACE */}
                 {currentRole === 'super_admin' && (
                   <div>
-                    {activeTab === 'admin_dashboard' && <AdminDashboard />}
+                    {activeTab === 'admin_dashboard' && (
+                      <AdminDashboard
+                        courses={courses}
+                        onCoursesUpdate={setCourses}
+                        allowTrainerAddCourse={allowTrainerAddCourse}
+                        onToggleTrainerPermission={handleToggleTrainerPermission}
+                      />
+                    )}
                     {activeTab === 'catalog' && (
                       <PublicPages
+                        courses={courses}
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
                         selectedCourse={selectedCourse}
@@ -276,6 +409,7 @@ export default function App() {
                     {activeTab === 'corporate_dashboard' && <CorporateAdminDashboard />}
                     {activeTab === 'catalog' && (
                       <PublicPages
+                        courses={courses}
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
                         selectedCourse={selectedCourse}

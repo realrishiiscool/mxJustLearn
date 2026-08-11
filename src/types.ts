@@ -34,6 +34,8 @@ export interface Lesson {
   isPrivateYoutube?: boolean;
   previewAllowed: boolean;
   contentMarkdown?: string;
+  textContent?: string;
+  pdfUrl?: string;
 }
 
 export interface Module {
