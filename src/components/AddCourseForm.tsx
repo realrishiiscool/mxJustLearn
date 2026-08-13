@@ -3,15 +3,22 @@ import { X, Save, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Course } from '../types';
 
 interface AddCourseFormProps {
+  courses: Course[];
   onClose: () => void;
   onSuccess: (courses: Course[]) => void;
 }
 
-export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps) {
+export default function AddCourseForm({ courses, onClose, onSuccess }: AddCourseFormProps) {
   // Course form fields state
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Java Full Stack');
+  const [customCategory, setCustomCategory] = useState('');
   const [level, setLevel] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Beginner');
+
+  const defaultCategories = ['Java Full Stack', 'Python Django', 'Data Science & ML', 'Generative AI', 'Automation Testing', 'Cloud & DevOps'];
+  const existingCategories = Array.from(new Set(courses.map(c => c.category)))
+    .filter(cat => cat && cat.trim() !== '');
+  const allCategories = Array.from(new Set([...defaultCategories, ...existingCategories]));
   const [instructor, setInstructor] = useState('');
   const [instructorBio, setInstructorBio] = useState('');
   const [price, setPrice] = useState(0);
@@ -121,12 +128,17 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
       return;
     }
 
+    if (category === 'custom' && !customCategory.trim()) {
+      setErrorMsg('Please enter a name for the custom category.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const newCourse: Partial<Course> = {
         title: title.trim(),
-        category: category.trim(),
+        category: category === 'custom' ? customCategory.trim() : category.trim(),
         instructor: instructor.trim(),
         instructorBio: instructorBio.trim() || 'Professional Senior Software Engineering Coach',
         rating: 4.8,
@@ -186,8 +198,8 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
   };
 
   return (
-    <div id="add-course-modal" className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto my-8">
+    <div id="add-course-modal" className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+      <div className="bg-slate-900 border border-slate-800/80 rounded-3xl max-w-6xl w-full p-6 md:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto my-4 transition-all duration-300">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
@@ -226,7 +238,12 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6 text-xs">
           
-          {/* Section 1: Basic Info */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Left side: Course Metadata & Info (5/12 cols) */}
+            <div className="lg:col-span-5 space-y-6">
+
+              {/* Section 1: Basic Info */}
           <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/80 space-y-4">
             <h3 className="font-extrabold text-sm text-slate-300 tracking-tight border-b border-slate-800 pb-2">1. Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,16 +263,29 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
                 <label className="block text-slate-400 mb-1.5 font-semibold">Category / Tech Track *</label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    if (e.target.value !== 'custom') {
+                      setCustomCategory('');
+                    }
+                  }}
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-350 focus:outline-none focus:border-indigo-500 transition"
                 >
-                  <option value="Java Full Stack">Java Full Stack</option>
-                  <option value="Python Django">Python Django</option>
-                  <option value="Data Science & ML">Data Science & ML</option>
-                  <option value="Generative AI">Generative AI</option>
-                  <option value="Automation Testing">Automation Testing</option>
-                  <option value="Cloud & DevOps">Cloud & DevOps</option>
+                  {allCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                  <option value="custom">-- Add Custom Category --</option>
                 </select>
+                {category === 'custom' && (
+                  <input
+                    type="text"
+                    required
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    placeholder="Enter custom category name"
+                    className="w-full mt-2 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-350 focus:outline-none focus:border-indigo-500 transition"
+                  />
+                )}
               </div>
 
               <div>
@@ -377,9 +407,13 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
               </div>
             </div>
           </div>
+          </div> {/* End of Left Column */}
 
-          {/* Section 4: Curriculum Builder */}
-          <div className="bg-slate-950/40 p-6 rounded-3xl border border-slate-800/80 space-y-6">
+          {/* Right side: Curriculum Builder (7/12 cols) */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Section 4: Curriculum Builder */}
+            <div className="bg-slate-950/30 p-5 md:p-6 rounded-3xl border border-slate-800/80 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <h3 className="font-extrabold text-sm text-slate-300 tracking-tight">4. Course Curriculum & Syllabus Structure</h3>
@@ -394,7 +428,7 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6 max-h-[58vh] overflow-y-auto pr-1.5 custom-scrollbar">
               {modules.map((mod, modIdx) => (
                 <div key={modIdx} className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 space-y-4 relative">
                   
@@ -507,9 +541,11 @@ export default function AddCourseForm({ onClose, onSuccess }: AddCourseFormProps
               ))}
             </div>
           </div>
+          </div> {/* End of Right Column */}
+        </div> {/* End of Grid */}
 
           {/* Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800/80 animate-fade-in">
             <button
               type="button"
               onClick={onClose}

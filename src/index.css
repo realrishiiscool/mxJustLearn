@@ -5,3 +5,371 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
+
+/* --- LIGHT THEME STYLE OVERRIDES --- */
+.light-theme {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  color-scheme: light;
+}
+
+/* Global transitions for background and colors */
+.light-theme #sidebar-navigation,
+.light-theme header,
+.light-theme main,
+.light-theme footer,
+.light-theme div,
+.light-theme aside,
+.light-theme section {
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Page Background mapping: bg-slate-955 -> slate-50 */
+.light-theme .bg-slate-955,
+.light-theme .bg-slate-950,
+.light-theme .bg-slate-955\/90,
+.light-theme .bg-slate-950\/90,
+.light-theme .bg-slate-955\/80,
+.light-theme .bg-slate-950\/80 {
+  background-color: #f8fafc !important;
+}
+
+/* Primary Container & Card Backgrounds: bg-slate-900 -> white */
+.light-theme .bg-slate-900,
+.light-theme .bg-slate-900\/60,
+.light-theme .bg-slate-900\/40,
+.light-theme .bg-slate-900\/50 {
+  background-color: #ffffff !important;
+}
+
+/* Secondary/Muted element backgrounds: bg-slate-800 -> slate-100 */
+.light-theme .bg-slate-800,
+.light-theme .bg-slate-800\/80,
+.light-theme .bg-slate-800\/50 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Muted / Secondary Card backgrounds: bg-slate-955 -> slate-100 */
+.light-theme .bg-slate-955\/20,
+.light-theme .bg-slate-950\/50,
+.light-theme .bg-slate-955\/10,
+.light-theme .bg-slate-950\/20,
+.light-theme .bg-slate-955\/30,
+.light-theme .bg-slate-950\/40 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Pill / Category tags with Indigo text: bg-slate-955/70 -> soft indigo */
+.light-theme .bg-slate-955\/70,
+.light-theme .bg-slate-950\/70 {
+  background-color: #e0e7ff !important;
+  border-color: #c7d2fe !important;
+}
+
+/* Structural text overrides: Slate gray to dark slate */
+.light-theme .text-slate-100,
+.light-theme .text-slate-250,
+.light-theme .text-slate-200,
+.light-theme .text-slate-300 {
+  color: #0f172a !important;
+}
+
+/* Muted text color mapping: Slate 400 -> Slate 600 */
+.light-theme .text-slate-400,
+.light-theme .text-slate-450,
+.light-theme .text-slate-455 {
+  color: #475569 !important;
+}
+
+/* Sub-muted text color mapping: Slate 500 -> Slate 500 */
+.light-theme .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Global headings should always be dark slate */
+.light-theme h1,
+.light-theme h2,
+.light-theme h3,
+.light-theme h4,
+.light-theme h5,
+.light-theme h6 {
+  color: #0f172a !important;
+}
+
+/* Turn all text-white elements to dark slate in Light Mode by default */
+.light-theme .text-white {
+  color: #0f172a !important;
+}
+
+/* Specifically restore text-white/slate-100 inside buttons, badges, active tabs, and avatars */
+.light-theme button .text-white,
+.light-theme button.text-white,
+.light-theme button .text-slate-100,
+.light-theme button.text-slate-100,
+.light-theme a.text-white,
+.light-theme a.bg-indigo-600 .text-white,
+.light-theme a.bg-indigo-600 .text-slate-100,
+.light-theme .bg-indigo-600 .text-white,
+.light-theme .bg-indigo-600 .text-slate-100,
+.light-theme .bg-gradient-to-r .text-white,
+.light-theme .bg-gradient-to-r .text-slate-100,
+.light-theme .bg-emerald-600 .text-white,
+.light-theme .bg-emerald-600 .text-slate-100,
+.light-theme .bg-red-600 .text-white,
+.light-theme .bg-red-600 .text-slate-100,
+.light-theme .bg-red-955 .text-white,
+.light-theme .bg-red-955 .text-slate-100,
+.light-theme .bg-red-950 .text-white,
+.light-theme .bg-red-950 .text-slate-100 {
+  color: #ffffff !important;
+}
+
+/* Borders mapping: slate-800 -> slate-200 */
+.light-theme .border-slate-800,
+.light-theme .border-slate-800\/80,
+.light-theme .border-slate-850,
+.light-theme .border-slate-750,
+.light-theme .border-slate-700,
+.light-theme .border-slate-700\/50,
+.light-theme .border-slate-900\/30,
+.light-theme .border-slate-850\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Input elements styling */
+.light-theme input,
+.light-theme select,
+.light-theme textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light-theme input::placeholder,
+.light-theme textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.light-theme select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.light-theme input:focus,
+.light-theme select:focus,
+.light-theme textarea:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
+}
+
+/* Muted buttons / selections hover styles */
+.light-theme .hover\:bg-slate-800:hover,
+.light-theme .hover\:bg-slate-900:hover,
+.light-theme .hover\:bg-slate-950:hover,
+.light-theme .hover\:bg-slate-800\/40:hover,
+.light-theme .hover\:bg-slate-950\/40:hover,
+.light-theme .hover\:bg-slate-850\/80:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Sidebar navigation overrides */
+.light-theme #sidebar-navigation {
+  background-color: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.light-theme #sidebar-navigation .text-slate-500 {
+  color: #64748b !important;
+}
+
+.light-theme #sidebar-navigation .text-slate-400 {
+  color: #475569 !important;
+}
+
+.light-theme #sidebar-navigation .text-indigo-400 {
+  color: #4f46e5 !important;
+}
+
+/* Active sidebar item state */
+.light-theme .bg-indigo-600\/10 {
+  background-color: #e0e7ff !important;
+  color: #4f46e5 !important;
+  border-color: #c7d2fe !important;
+}
+
+.light-theme .bg-indigo-650\/20,
+.light-theme .bg-indigo-600\/20 {
+  background-color: #e0e7ff !important;
+  color: #4f46e5 !important;
+}
+
+.light-theme .text-indigo-400 {
+  color: #4f46e5 !important;
+}
+
+.light-theme .border-indigo-500\/20,
+.light-theme .border-indigo-500\/30 {
+  border-color: #c7d2fe !important;
+}
+
+/* Sandbox selector custom styles */
+.light-theme #role-sandbox-select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Cards box elevation shadows */
+.light-theme .bg-slate-900,
+.light-theme .bg-slate-900\/40,
+.light-theme .bg-slate-900\/60,
+.light-theme .border-slate-800\/80,
+.light-theme .border-slate-700\/50,
+.light-theme .border-slate-800 {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Alert dialog boxes overrides */
+.light-theme .bg-red-950\/30,
+.light-theme .bg-red-950\/20 {
+  background-color: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+  color: #b91c1c !important;
+}
+
+.light-theme .bg-emerald-950\/30,
+.light-theme .bg-emerald-950\/20 {
+  background-color: #ecfdf5 !important;
+  border-color: #6ee7b7 !important;
+  color: #047857 !important;
+}
+
+.light-theme .bg-amber-400\/10 {
+  background-color: #fffbef !important;
+  border-color: #fde047 !important;
+  color: #b45309 !important;
+}
+
+.light-theme .bg-blue-600\/20 {
+  background-color: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+
+.light-theme .text-emerald-400 {
+  color: #047857 !important;
+}
+
+.light-theme .text-amber-400 {
+  color: #b45309 !important;
+}
+
+.light-theme .text-red-400 {
+  color: #b91c1c !important;
+}
+
+/* Scrollbars overrides in Light Mode */
+.light-theme ::-webkit-scrollbar-track {
+  background: #f8fafc !important;
+}
+
+.light-theme ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+}
+
+/* Coding Arena editor overrides */
+.light-theme .bg-slate-955\/80,
+.light-theme .bg-slate-950\/80 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Course Editor lists and modules details */
+.light-theme .bg-slate-955,
+.light-theme .bg-slate-955\/90,
+.light-theme .bg-slate-955\/40,
+.light-theme .bg-slate-955\/30,
+.light-theme .bg-slate-955\/20,
+.light-theme .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+
+.light-theme .text-slate-350,
+.light-theme .text-slate-300 {
+  color: #1e293b !important;
+}
+
+/* Course Player & Video Overlays */
+.light-theme #add-course-modal,
+.light-theme #auth-modal,
+.light-theme #assessment-modal {
+  background-color: rgba(15, 23, 42, 0.6) !important; /* Keep modal backdrop dark for contrast */
+}
+
+/* Leaderboard items active rows */
+.light-theme .bg-slate-900\/80 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Recharts grid labels overrides in Light Mode */
+.light-theme .recharts-cartesian-grid-horizontal line,
+.light-theme .recharts-cartesian-grid-vertical line {
+  stroke: #e2e8f0 !important;
+}
+
+.light-theme .recharts-text {
+  fill: #475569 !important;
+}
+
+/* Secondary bg-slate-800 buttons custom colors in Light Mode */
+.light-theme button.bg-slate-800,
+.light-theme button.bg-slate-800 * {
+  color: #334155 !important;
+}
+
+.light-theme button.bg-slate-800:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Course Player Reading Material Viewport overrides in Light Mode */
+.light-theme .bg-slate-900\/85 {
+  background-color: #ffffff !important;
+}
+
+/* Markdown pre/code formatting inside Reading Material in Light Mode */
+.light-theme pre {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.light-theme pre code {
+  color: #1e293b !important;
+  background-color: transparent !important;
+}
+
+.light-theme code {
+  background-color: #f1f5f9 !important;
+  color: #4f46e5 !important;
+}
+
+/* Markdown tables in Light Mode */
+.light-theme table,
+.light-theme table th,
+.light-theme table td {
+  border-color: #cbd5e1 !important;
+}
+
+.light-theme table th {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.light-theme table td {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+

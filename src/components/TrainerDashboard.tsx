@@ -416,6 +416,7 @@ export default function TrainerDashboard({
 
       {showAddCourseModal && (
         <AddCourseForm 
+          courses={courses}
           onClose={() => setShowAddCourseModal(false)}
           onSuccess={onCoursesUpdate}
         />

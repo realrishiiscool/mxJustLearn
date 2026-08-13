@@ -853,6 +853,32 @@ app.post('/api/courses/delete', async (req, res) => {
   }
 });
 
+// Update course details (price and category)
+app.post('/api/courses/update-details', async (req, res) => {
+  try {
+    const { courseId, price, category } = req.body;
+    if (!pool) return res.status(500).json({ success: false, error: 'Database not connected' });
+    if (!courseId) return res.status(400).json({ success: false, error: 'Course ID is required' });
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.query('UPDATE courses SET price = ?, category = ? WHERE id = ?', [
+        price || 0.00,
+        category || 'Java Full Stack',
+        courseId
+      ]);
+    } finally {
+      conn.release();
+    }
+
+    const courses = await getCoursesList();
+    res.json({ success: true, courses });
+  } catch (error: any) {
+    console.error('Error updating course details:', error);
+    res.status(500).json({ success: false, error: error.message || 'Server error updating course details' });
+  }
+});
+
 // Permissions endpoints
 app.get('/api/admin/permissions', (req, res) => {
   res.json({ allowTrainerAddCourse: db.adminData.allowTrainerAddCourse });

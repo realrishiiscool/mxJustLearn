@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Course, Module, Lesson } from '../types';
 import { Save, Edit2, PlayCircle, Lock } from 'lucide-react';
 
 interface CourseEditorProps {
   courses: Course[];
   onCoursesUpdate: (courses: Course[]) => void;
+  hideHeader?: boolean;
+  borderless?: boolean;
 }
 
-export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorProps) {
+export default function CourseEditor({ 
+  courses, 
+  onCoursesUpdate,
+  hideHeader = false,
+  borderless = false
+}: CourseEditorProps) {
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courses[0]?.id || '');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('');
   const [selectedLessonId, setSelectedLessonId] = useState<string>('');
@@ -16,6 +23,12 @@ export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorP
   const [textContent, setTextContent] = useState('');
   const [pdfUrl, setPdfUrl] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Pricing state
+  const [coursePrice, setCoursePrice] = useState<string>('');
+  const [priceSuccessMsg, setPriceSuccessMsg] = useState('');
+  const [courseCategory, setCourseCategory] = useState<string>('');
+  const [customCategory, setCustomCategory] = useState<string>('');
 
   // Add module/lesson dynamic creation states
   const [newModuleName, setNewModuleName] = useState('');
@@ -102,6 +115,61 @@ export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorP
     }
   };
 
+  const defaultCategories = ['Java Full Stack', 'Python Django', 'Data Science & ML', 'Generative AI', 'Automation Testing', 'Cloud & DevOps'];
+  const existingCategories = Array.from(new Set(courses.map(c => c.category)))
+    .filter(cat => cat && cat.trim() !== '');
+  const allCategories = Array.from(new Set([...defaultCategories, ...existingCategories]));
+
+  useEffect(() => {
+    if (course) {
+      setCoursePrice(course.price.toString());
+      setCourseCategory(course.category);
+      setCustomCategory('');
+    } else {
+      setCoursePrice('');
+      setCourseCategory('');
+      setCustomCategory('');
+    }
+  }, [selectedCourseId, courses]);
+
+  const handleSaveSettings = async () => {
+    if (!selectedCourseId) return;
+    const parsedPrice = parseFloat(coursePrice);
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      alert('Please enter a valid price amount');
+      return;
+    }
+
+    const finalCategory = courseCategory === 'custom' ? customCategory.trim() : courseCategory.trim();
+    if (!finalCategory) {
+      alert('Please select or specify a category name.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/courses/update-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          courseId: selectedCourseId, 
+          price: parsedPrice,
+          category: finalCategory
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.courses) {
+        onCoursesUpdate(data.courses);
+        setPriceSuccessMsg('Settings updated successfully!');
+        setTimeout(() => setPriceSuccessMsg(''), 3000);
+      } else {
+        alert(data.error || 'Failed to update course details');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error updating course details');
+    }
+  };
+
   const handleSave = async () => {
     if (lesson && course && mod) {
       try {
@@ -141,15 +209,17 @@ export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorP
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-6 text-xs text-slate-300">
-      <div className="flex items-center justify-between">
-        <h3 className="font-bold text-base text-slate-200">Course & Curriculum Editor</h3>
-        <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded font-mono uppercase">Admin & Trainer Only</span>
-      </div>
+    <div className={borderless ? "space-y-6 text-xs text-slate-300" : "bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-6 text-xs text-slate-300"}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-base text-slate-200">Course & Curriculum Editor</h3>
+          <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded font-mono uppercase">Admin & Trainer Only</span>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Navigation Column */}
-        <div className="space-y-4 md:col-span-1 border-r border-slate-800 pr-4 max-h-96 overflow-y-auto">
+        <div className="space-y-4 md:col-span-1 border-r border-slate-800/80 pr-4 max-h-[550px] overflow-y-auto">
           <div>
             <label className="block text-slate-400 mb-1.5 font-semibold">Select Course</label>
             <select
@@ -180,6 +250,70 @@ export default function CourseEditor({ courses, onCoursesUpdate }: CourseEditorP
 
           {course && (
             <div className="space-y-4">
+              {/* Course Settings Panel */}
+              <div className="bg-slate-950/40 p-4 border border-slate-850 rounded-2xl space-y-3.5">
+                <label className="block text-slate-400 font-bold text-xs uppercase tracking-wider">Course Settings</label>
+                
+                {/* Price input */}
+                <div>
+                  <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Price (₹)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">₹</span>
+                    <input
+                      type="number"
+                      value={coursePrice}
+                      onChange={(e) => setCoursePrice(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full bg-slate-950 border border-slate-850 rounded-lg pl-7 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Category selector */}
+                <div>
+                  <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Category / Tech Track</label>
+                  <select
+                    value={courseCategory}
+                    onChange={(e) => {
+                      setCourseCategory(e.target.value);
+                      if (e.target.value !== 'custom') {
+                        setCustomCategory('');
+                      }
+                    }}
+                    className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none"
+                  >
+                    {allCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value="custom">-- Add Custom Category --</option>
+                  </select>
+                  {courseCategory === 'custom' && (
+                    <input
+                      type="text"
+                      required
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      placeholder="Enter custom category name"
+                      className="w-full mt-2 bg-slate-955 border border-slate-850 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none"
+                    />
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveSettings}
+                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+                >
+                  Save Settings
+                </button>
+
+                {priceSuccessMsg && (
+                  <div className="text-[10px] text-emerald-500 font-bold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 text-center animate-pulse">
+                    {priceSuccessMsg}
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-slate-400 mb-1.5 font-semibold">Curriculum Modules</label>
                 <div className="space-y-2">

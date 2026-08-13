@@ -16,10 +16,18 @@ import CoursePlayer from './components/CoursePlayer';
 import AssessmentEngine from './components/AssessmentEngine';
 import AuthModal from './components/AuthModal';
 import AdminRegisterModal from './components/AdminRegisterModal';
+import { Sun, Moon } from 'lucide-react';
 
 export default function App() {
   // Current logged role or public state
   const [currentRole, setCurrentRole] = useState<UserRole | 'public'>('public');
+
+  // Theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   // Courses state fetched from server
   const [courses, setCourses] = useState<Course[]>([]);
@@ -151,7 +159,7 @@ export default function App() {
   };
 
   return (
-    <div id="mx-justlearn-app" className="bg-slate-950 min-h-screen text-slate-100 font-sans selection:bg-blue-500/30 selection:text-blue-300">
+    <div id="mx-justlearn-app" className={`${theme === 'light' ? 'light-theme' : ''} bg-slate-950 min-h-screen text-slate-100 font-sans selection:bg-blue-500/30 selection:text-blue-300 transition-colors duration-350`}>
       
       {/* 1. Video Player Overlays */}
       {activePlayCourse && (
@@ -254,6 +262,19 @@ export default function App() {
           <main className="flex-1 min-w-0 h-screen overflow-y-auto">
             {/* TOP HEADER */}
             <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex justify-end items-center shadow-sm">
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                type="button"
+                className="mr-4 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-100 transition duration-150 cursor-pointer flex items-center justify-center"
+                title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+              >
+                {theme === 'light' ? (
+                  <Moon className="w-4 h-4 text-indigo-500" />
+                ) : (
+                  <Sun className="w-4 h-4 text-amber-400 animate-pulse" />
+                )}
+              </button>
               {currentRole === 'public' ? (
                 <button
                   onClick={() => setShowAuthModal(true)}

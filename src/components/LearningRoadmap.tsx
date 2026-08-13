@@ -517,7 +517,7 @@ export default function LearningRoadmap({
                       
                       <div className="flex justify-between items-center pt-1.5">
                         <span className="text-[11px] font-black text-white">
-                          ₹{course.price}
+                          ₹{Math.round(Number(course.price))}
                         </span>
                         <button
                           onClick={() => onEnrollCourse(course.id)}

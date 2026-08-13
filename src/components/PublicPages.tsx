@@ -106,8 +106,8 @@ export default function PublicPages({
             <div className="mb-6">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">PROGRAM PRICE</span>
               <div className="flex items-baseline gap-2 mt-1">
-                 <span className="text-3xl font-black text-white">₹{selectedCourse.price}</span>
-                 <span className="text-slate-550 text-xs font-semibold line-through">₹{(selectedCourse.price * 1.5).toFixed(0)}</span>
+                 <span className="text-3xl font-black text-white">₹{Math.round(Number(selectedCourse.price))}</span>
+                 <span className="text-slate-550 text-xs font-semibold line-through">₹{Math.round(Number(selectedCourse.price) * 1.5)}</span>
               </div>
               <span className="text-[10px] text-green-400 font-semibold mt-1 block">Full life-long platform access</span>
             </div>

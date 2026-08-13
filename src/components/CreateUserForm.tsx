@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { UserPlus, Save, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function CreateUserForm() {
+interface CreateUserFormProps {
+  borderless?: boolean;
+}
+
+export default function CreateUserForm({ borderless = false }: CreateUserFormProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,12 +40,14 @@ export default function CreateUserForm() {
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6">
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-4 mb-6">
-        <UserPlus className="w-6 h-6 text-emerald-400" />
+    <div className={borderless ? "space-y-6 text-xs text-slate-300" : "bg-slate-900 border border-slate-800 rounded-3xl p-6 text-xs text-slate-300"}>
+      <div className="flex items-center gap-2.5 border-b border-slate-800/80 pb-4 mb-6">
+        <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+          <UserPlus className="w-5 h-5" />
+        </div>
         <div>
           <h3 className="font-bold text-base text-white">Create System User</h3>
-          <p className="text-slate-400 text-xs mt-0.5">Provision new trainers or staff accounts directly from the admin panel.</p>
+          <p className="text-slate-400 text-xs mt-0.5">Provision new trainers or staff accounts directly.</p>
         </div>
       </div>
 
@@ -52,63 +58,68 @@ export default function CreateUserForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
-            <input 
-              type="text" 
-              required 
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              placeholder="E.g. Rajesh Kumar"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
-            <input 
-              type="email" 
-              required 
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              placeholder="rajesh@mxjustlearn.com"
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Full Name</label>
+          <input 
+            type="text" 
+            required 
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 focus:outline-none transition duration-150"
+            placeholder="E.g. Rajesh Kumar"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Email Address</label>
+          <input 
+            type="email" 
+            required 
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 focus:outline-none transition duration-150"
+            placeholder="rajesh@mxjustlearn.com"
+          />
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Temporary Password</label>
-            <input 
-              type="password" 
-              required 
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              placeholder="••••••••"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Assign Role</label>
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Temporary Password</label>
+          <input 
+            type="password" 
+            required 
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 focus:outline-none transition duration-150"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Assign Role</label>
+          <div className="relative">
             <select
               value={role}
               onChange={e => setRole(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none appearance-none"
+              className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 focus:outline-none appearance-none transition duration-150 cursor-pointer"
             >
               <option value="trainer">Trainer</option>
               <option value="corporate_admin">Corporate HR</option>
               <option value="student">Student</option>
             </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+              </svg>
+            </div>
           </div>
         </div>
 
-        <div className="md:col-span-2 flex justify-end mt-2">
+        <div className="flex justify-end pt-2">
           <button 
             type="submit"
             disabled={loading}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-lg flex items-center gap-2 transition"
+            className="w-full px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-2 transition duration-200 cursor-pointer transform hover:-translate-y-0.5"
           >
             <Save className="w-4 h-4" />
             {loading ? 'Provisioning...' : 'Provision Account'}

@@ -4,8 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Database, Users, TrendingUp, RefreshCw, Terminal, IndianRupee, BookOpen, ChevronRight, Activity, Server, Zap, Plus } from 'lucide-react';
-import { DATABASE_SCHEMA_DDL } from '../data';
+import { Shield, Users, TrendingUp, RefreshCw, IndianRupee, BookOpen, Activity, Server, Zap, Plus, Layers, Sparkles } from 'lucide-react';
 import CourseEditor from './CourseEditor';
 import CreateUserForm from './CreateUserForm';
 import AddCourseForm from './AddCourseForm';
@@ -26,7 +25,6 @@ export default function AdminDashboard({
 }: AdminDashboardProps) {
   const [adminStats, setAdminStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [activeSchemaTab, setActiveSchemaTab] = useState<'ddl' | 'tables'>('ddl');
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
 
   useEffect(() => {
@@ -45,16 +43,6 @@ export default function AdminDashboard({
       setLoading(false);
     }
   };
-
-  const schemaTables = [
-    { name: 'users', desc: 'Master accounts, login credentials, streak logs, profile levels, and gamified XP.' },
-    { name: 'roles & permissions', desc: 'Granular access control permissions matching (Super Admin, Trainer, Student, Corporate Admin).' },
-    { name: 'courses, modules', desc: 'Maintains catalog structures, video player resources, metadata, and progress ticks.' },
-    { name: 'assessments', desc: 'Stores HackerRank MCQ sheets, negative marking multipliers, scenario configurations.' },
-    { name: 'coding_problems', desc: 'Maintains LeetCode algorithmic test suites, runtime limits, compiler indicators.' },
-    { name: 'internships', desc: 'Saves Co-op progress logs, student task descriptions, and mentor ratings.' },
-    { name: 'jobs & applications', desc: 'Maintains hiring portal pipelines, resumes uploaded, recruiter status codes.' }
-  ];
 
   if (loading || !adminStats) {
     return (
@@ -90,11 +78,14 @@ export default function AdminDashboard({
           </div>
         </div>
         <div className="flex gap-3">
+          <button 
+            onClick={() => setShowAddCourseModal(true)}
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all duration-300 flex items-center gap-2 cursor-pointer transform hover:-translate-y-0.5"
+          >
+            <Plus className="w-4 h-4" /> Create New Course
+          </button>
           <button className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer">
             Audit Logs
-          </button>
-          <button className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all duration-300 flex items-center gap-2 cursor-pointer">
-            <Zap className="w-4 h-4" /> Generate Report
           </button>
         </div>
       </div>
@@ -127,103 +118,53 @@ export default function AdminDashboard({
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Relational DB & Sales */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Relational Database Explorer Section */}
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 overflow-hidden relative shadow-xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -z-10"></div>
+      <div className="space-y-8">
+        {/* Course & Curriculum Management Room (Full Width) */}
+        <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative overflow-hidden group hover:border-slate-700/60 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-[90px] pointer-events-none -z-10"></div>
             
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+            {/* Header Bar for Course Operations */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-800/80">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-indigo-400 shadow-inner">
-                  <Database className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner">
+                  <BookOpen className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">Enterprise Schema</h3>
-                  <p className="text-slate-400 text-sm mt-1">Physical Postgres infrastructure map.</p>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-bold text-white tracking-tight">Course & Curriculum Editor</h2>
+                    <span className="px-3 py-0.5 text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                      {courses.length} Active Courses
+                    </span>
+                  </div>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Manage curriculum structures, update video lessons, edit markdown content, and build new training tracks.
+                  </p>
                 </div>
-              </div>
-
-              <div className="flex bg-slate-950/80 rounded-xl p-1.5 border border-slate-800 backdrop-blur-md">
-                <button
-                  onClick={() => setActiveSchemaTab('ddl')}
-                  className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                    activeSchemaTab === 'ddl' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-300'
-                  }`}
-                >
-                  DDL Source
-                </button>
-                <button
-                  onClick={() => setActiveSchemaTab('tables')}
-                  className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                    activeSchemaTab === 'tables' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-300'
-                  }`}
-                >
-                  Logical View
-                </button>
               </div>
             </div>
 
-            {activeSchemaTab === 'ddl' ? (
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/30 to-teal-500/30 rounded-2xl blur opacity-20 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                <div className="relative bg-[#0d1117]/90 backdrop-blur-sm rounded-2xl border border-slate-700/60 p-6 max-h-[400px] overflow-y-auto">
-                  <div className="flex items-center gap-2 mb-4 text-slate-500 border-b border-slate-800 pb-3">
-                    <Terminal className="w-4 h-4" />
-                    <span className="text-xs font-mono tracking-wider">schema.sql</span>
-                  </div>
-                  <pre className="text-xs font-mono text-emerald-400/90 leading-relaxed whitespace-pre-wrap">
-                    {DATABASE_SCHEMA_DDL}
-                  </pre>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {schemaTables.map((tbl, idx) => (
-                  <div key={idx} className="group p-5 bg-slate-950/50 backdrop-blur-sm border border-slate-800/80 rounded-2xl hover:border-indigo-500/50 transition-all duration-300 hover:bg-slate-900">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-bold text-indigo-400 font-mono text-sm tracking-tight">{tbl.name}</h4>
-                      <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
-                    </div>
-                    <p className="text-slate-400 text-sm leading-relaxed">{tbl.desc}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Embedded Course Editor */}
+            <CourseEditor courses={courses} onCoursesUpdate={onCoursesUpdate} hideHeader={true} borderless={true} />
           </div>
 
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-xl">
-            <CourseEditor courses={courses} onCoursesUpdate={onCoursesUpdate} />
-          </div>
-        </div>
-
-        {/* Right Column: Forms & Audit */}
-        <div className="space-y-8">
-          {/* System Configuration & Course Creation Card */}
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl relative overflow-hidden shadow-xl">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[50px] -z-10"></div>
+          {/* Configuration, Sales Audit & User Creation (3-column layout below) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* System Configuration & Quick Launcher */}
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 p-8 rounded-3xl relative overflow-hidden shadow-xl hover:border-slate-700/60 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-[50px] -z-10"></div>
             
-            <h3 className="font-bold text-xl text-white mb-4 flex items-center gap-3">
-              <div className="p-2 bg-indigo-500/10 rounded-lg">
-                <Server className="w-5 h-5 text-indigo-400" />
+            <h3 className="font-bold text-lg text-white mb-3 flex items-center gap-3">
+              <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                <Server className="w-4 h-4" />
               </div>
               Course Permissions & Tools
             </h3>
             <p className="text-slate-400 text-xs mb-6">
-              Configure trainer access parameters and build new modules.
+              Configure trainer access parameters, inspect roles, and audit credentials.
             </p>
 
-            {/* Course Addition Trigger */}
-            <button
-              onClick={() => setShowAddCourseModal(true)}
-              className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Create New Course
-            </button>
-
-            <div className="border-t border-slate-800/80 my-5 pt-5">
-              <div className="flex items-center justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3.5 bg-slate-950/40 border border-slate-800/60 rounded-2xl">
                 <div>
                   <span className="block text-xs font-bold text-slate-200">Trainer Course Addition</span>
                   <span className="block text-[10px] text-slate-500 mt-0.5">Extend curriculum creation access to trainer role</span>
@@ -243,58 +184,87 @@ export default function AdminDashboard({
                   />
                 </button>
               </div>
+
+              {/* Extra System Metadata indicators to replace the button space and look professional */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl">
+                  <span className="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">System Roles</span>
+                  <span className="text-xs font-semibold text-slate-300 mt-1 block">4 Active Roles</span>
+                </div>
+                <div className="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl">
+                  <span className="block text-[10px] uppercase font-bold text-slate-500 tracking-wider">DB Status</span>
+                  <span className="text-xs font-semibold text-emerald-400 mt-1 block flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Connected
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Course sales leaderboards */}
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 p-8 rounded-3xl relative overflow-hidden shadow-xl">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-[50px] -z-10"></div>
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 p-8 rounded-3xl relative overflow-hidden shadow-xl hover:border-slate-700/60 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-[50px] -z-10"></div>
             
-            <h3 className="font-bold text-xl text-white mb-6 flex items-center gap-3">
-              <div className="p-2 bg-amber-500/10 rounded-lg">
-                <Activity className="w-5 h-5 text-amber-400" />
+            <h3 className="font-bold text-lg text-white mb-6 flex items-center gap-3">
+              <div className="p-2 bg-amber-500/10 rounded-lg text-amber-400">
+                <Activity className="w-4 h-4" />
               </div>
               Sales Audit
             </h3>
             
-            <div className="space-y-4">
-              {adminStats.topCourses.map((crs: any, idx: number) => (
-                <div key={crs.id} className="group relative p-4 bg-slate-950/50 border border-slate-800/80 rounded-2xl hover:border-amber-500/40 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-mono font-bold text-slate-300 text-xs shadow-inner">
-                        {idx + 1}
+            <div className="space-y-4 animate-fade-in">
+              {adminStats.topCourses.map((crs: any, idx: number) => {
+                // Find matching course to retrieve price and metadata
+                const matched = courses.find(c => c.id === crs.id || c.title === crs.name);
+                const price = matched ? matched.price : 1499;
+                const revenue = crs.sales * price;
+                const level = matched ? matched.level : 'Intermediate';
+
+                return (
+                  <div key={crs.id} className="group relative p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl hover:border-amber-500/30 transition-all duration-300">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center font-mono font-bold text-slate-400 text-xs shadow-inner">
+                          {idx + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-bold text-slate-200 text-xs block truncate">{crs.name}</span>
+                          <span className="text-[10px] text-slate-500 tracking-wider uppercase font-mono">{level}</span>
+                        </div>
                       </div>
-                      <span className="font-semibold text-slate-200 text-sm">{crs.name}</span>
+                      <div className="text-right shrink-0">
+                        <span className="font-mono text-amber-400 font-bold text-xs bg-amber-400/5 border border-amber-400/20 px-2.5 py-0.5 rounded-full">
+                          {crs.sales} sold
+                        </span>
+                        <span className="block text-[10px] text-slate-400 font-mono mt-1">₹{Math.round(revenue).toLocaleString()}</span>
+                      </div>
                     </div>
-                    <span className="font-mono text-amber-400 font-bold text-sm bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">
-                      {crs.sales}
-                    </span>
+                    {/* Progress bar simulation */}
+                    <div className="w-full bg-slate-800/40 h-1 rounded-full overflow-hidden mt-2.5">
+                      <div 
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full shadow-[0_0_10px_rgba(245,158,11,0.3)] transition-all duration-500" 
+                        style={{ width: `${Math.max(20, 100 - idx * 25)}%` }}
+                      />
+                    </div>
                   </div>
-                  {/* Progress bar simulation */}
-                  <div className="w-full bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" 
-                      style={{ width: `${Math.max(20, 100 - idx * 25)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             
-            <button className="w-full mt-6 py-3.5 border border-slate-700 hover:bg-slate-800 hover:border-slate-600 rounded-xl text-slate-300 font-semibold text-sm transition-all duration-300 cursor-pointer">
+            <button className="w-full mt-6 py-3 border border-slate-850 hover:bg-slate-850 hover:border-slate-700 rounded-xl text-slate-400 hover:text-slate-200 font-semibold text-xs transition-all duration-200 cursor-pointer">
               View Full Report
             </button>
           </div>
 
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-xl">
-             <CreateUserForm />
+          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 shadow-xl hover:border-slate-700/60 transition-all duration-300">
+             <CreateUserForm borderless={true} />
           </div>
         </div>
       </div>
 
       {showAddCourseModal && (
         <AddCourseForm 
+          courses={courses}
           onClose={() => setShowAddCourseModal(false)}
           onSuccess={onCoursesUpdate}
         />
